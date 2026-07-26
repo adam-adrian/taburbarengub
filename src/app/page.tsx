@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LogoutButton } from '@/components/logout-button'
 import { createClient } from '@/lib/supabase/server'
 
 function formatDateTime(value: string) {
@@ -81,6 +82,7 @@ export default async function Home() {
               <>
                 <Link href="/tiket-saya">Tiket Saya</Link>
                 {isAdmin && <Link href="/admin">Admin</Link>}
+                <LogoutButton compact />
               </>
             ) : (
               <>

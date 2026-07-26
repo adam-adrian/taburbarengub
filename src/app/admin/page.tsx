@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LogoutButton } from '@/components/logout-button'
 
 const menuItems = [
   {
@@ -22,14 +23,25 @@ export default function AdminDashboardPage() {
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <div style={{ marginBottom: 28 }}>
-          <Link href="/" style={{ color: '#4b5563' }}>
-            ← Kembali ke landing page
-          </Link>
-          <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Admin Dashboard</h1>
-          <p style={{ color: '#6b7280', marginTop: 8 }}>
-            Panel awal untuk mengelola sesi, peserta, dan check-in event.
-          </p>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 16,
+            marginBottom: 28,
+          }}
+        >
+          <div>
+            <Link href="/" style={{ color: '#4b5563' }}>
+              ← Kembali ke landing page
+            </Link>
+            <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Admin Dashboard</h1>
+            <p style={{ color: '#6b7280', marginTop: 8 }}>
+              Panel awal untuk mengelola sesi, peserta, dan check-in event.
+            </p>
+          </div>
+          <LogoutButton />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
