@@ -1,0 +1,31 @@
+import Link from 'next/link'
+import { SessionForm } from '../session-form'
+
+export default function NewSessionPage() {
+  return (
+    <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
+        <Link href="/admin/sesi" style={{ color: '#4b5563' }}>
+          ← Kembali ke daftar sesi
+        </Link>
+
+        <section
+          style={{
+            marginTop: 24,
+            border: '1px solid #e5e7eb',
+            background: '#ffffff',
+            borderRadius: 18,
+            padding: 24,
+          }}
+        >
+          <h1 style={{ fontSize: 32, letterSpacing: -0.8, marginBottom: 8 }}>Tambah Sesi</h1>
+          <p style={{ color: '#6b7280', lineHeight: 1.6, marginBottom: 24 }}>
+            Buat sesi baru. Gunakan status draft dulu jika informasi belum final.
+          </p>
+
+          <SessionForm />
+        </section>
+      </div>
+    </main>
+  )
+}
