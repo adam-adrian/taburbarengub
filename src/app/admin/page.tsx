@@ -14,8 +14,7 @@ const menuItems = [
   {
     href: '/admin/peserta',
     title: 'Daftar Peserta',
-    description: 'Lihat peserta per sesi dan status check-in. Segera dibuat.',
-    disabled: true,
+    description: 'Lihat peserta per sesi dan status check-in.',
   },
 ]
 
