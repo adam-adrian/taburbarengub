@@ -34,12 +34,24 @@ type Html5QrcodeModule = {
   }
 }
 
+type CheckInResult = {
+  booking_id: string
+  user_id: string
+  session_id: string
+  nama: string
+  booking_status: string
+  checked_in_at: string
+}
+
 const READER_ELEMENT_ID = 'qr-scanner-reader'
 
 export default function AdminScannerPage() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
+  const processingRef = useRef(false)
   const [status, setStatus] = useState<ScannerStatus>('idle')
   const [result, setResult] = useState<string | null>(null)
+  const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null)
+  const [checkingIn, setCheckingIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function stopScanner() {
@@ -52,17 +64,65 @@ export default function AdminScannerPage() {
       }
       await scanner.clear()
     } catch {
-      // Untuk spike, gagal stop/clear tidak perlu bikin UI error.
+      // Gagal stop/clear tidak perlu bikin UI error.
     } finally {
       scannerRef.current = null
       setStatus('stopped')
     }
   }
 
+  async function submitCheckIn(qrToken: string) {
+    if (processingRef.current) return
+
+    processingRef.current = true
+    setCheckingIn(true)
+    setResult(qrToken)
+    setCheckInResult(null)
+    setError(null)
+
+    await stopScanner()
+
+    try {
+      const response = await fetch('/api/check-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_token: qrToken }),
+      })
+
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: CheckInResult; error?: unknown }
+        | null
+
+      if (!response.ok) {
+        const message =
+          typeof payload?.error === 'string'
+            ? payload.error
+            : 'Gagal memproses check-in, coba lagi'
+        setError(message)
+        return
+      }
+
+      if (payload?.data) {
+        setCheckInResult(payload.data)
+      } else {
+        setError('Response check-in tidak valid')
+      }
+    } catch {
+      setError('Tidak bisa terhubung ke server, coba lagi')
+    } finally {
+      setCheckingIn(false)
+      processingRef.current = false
+    }
+  }
+
   async function startScanner() {
     setError(null)
     setResult(null)
+    setCheckInResult(null)
     setStatus('starting')
+    processingRef.current = false
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('error')
@@ -82,8 +142,10 @@ export default function AdminScannerPage() {
       }
 
       const onSuccess = (decodedText: string) => {
-        setResult(decodedText)
-        setStatus('scanning')
+        const qrToken = decodedText.trim()
+        if (qrToken.length > 0) {
+          void submitCheckIn(qrToken)
+        }
       }
 
       // Coba kamera belakang dulu. Kalau gagal, fallback ke daftar kamera.
@@ -123,11 +185,11 @@ export default function AdminScannerPage() {
   }, [])
 
   return (
-    <main style={{ maxWidth: 520, margin: '0 auto', padding: 24 }}>
+    <main style={{ maxWidth: 560, margin: '0 auto', padding: 24 }}>
       <h1>Scan QR</h1>
       <p>
-        Spike awal scanner QR. Halaman ini baru membuktikan kamera browser bisa scan QR;
-        validasi check-in ke database akan disambungkan di step berikutnya.
+        Arahkan kamera ke QR tiket peserta. Sistem akan validasi token dan menandai
+        peserta sebagai checked-in jika tiket masih aktif.
       </p>
 
       <div
@@ -139,30 +201,46 @@ export default function AdminScannerPage() {
           borderRadius: 8,
           overflow: 'hidden',
           margin: '16px 0',
+          background: '#f9fafb',
         }}
       />
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button type="button" onClick={startScanner} disabled={status === 'starting' || status === 'scanning'}>
-          {status === 'starting' ? 'Menyalakan kamera...' : 'Mulai scan'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <button type="button" onClick={startScanner} disabled={status === 'starting' || status === 'scanning' || checkingIn}>
+          {status === 'starting' ? 'Menyalakan kamera...' : checkingIn ? 'Memproses...' : 'Mulai scan'}
         </button>
         <button type="button" onClick={stopScanner} disabled={!scannerRef.current}>
           Stop
         </button>
       </div>
 
-      <p>Status: {status}</p>
+      <p>Status scanner: {status}</p>
 
-      {result && (
-        <div role="status" style={{ padding: 12, border: '1px solid #0a0', marginTop: 12 }}>
+      {checkingIn && (
+        <div style={{ padding: 12, border: '1px solid #bfdbfe', background: '#eff6ff', marginTop: 12 }}>
+          Memproses check-in...
+        </div>
+      )}
+
+      {checkInResult && (
+        <div role="status" style={{ padding: 16, border: '1px solid #a7f3d0', background: '#ecfdf5', marginTop: 12, borderRadius: 8 }}>
+          <h2 style={{ marginBottom: 8 }}>Check-in berhasil</h2>
+          <p><strong>Nama:</strong> {checkInResult.nama}</p>
+          <p><strong>Status:</strong> {checkInResult.booking_status}</p>
+          <p><strong>Waktu:</strong> {new Date(checkInResult.checked_in_at).toLocaleString('id-ID')}</p>
+        </div>
+      )}
+
+      {result && !checkInResult && (
+        <div style={{ padding: 12, border: '1px solid #e5e7eb', marginTop: 12, borderRadius: 8 }}>
           <strong>QR terbaca:</strong>
           <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{result}</pre>
         </div>
       )}
 
       {error && (
-        <div role="alert" style={{ padding: 12, border: '1px solid #c00', marginTop: 12 }}>
-          <strong>Error:</strong> {error}
+        <div role="alert" style={{ padding: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', marginTop: 12, borderRadius: 8 }}>
+          <strong>Gagal:</strong> {error}
         </div>
       )}
     </main>
