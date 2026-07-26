@@ -115,20 +115,37 @@ export default async function AdminPesertaPage({
             </p>
           </div>
 
-          <Link
-            href="/admin/sesi"
-            style={{
-              background: '#ffffff',
-              color: '#111827',
-              padding: '11px 15px',
-              borderRadius: 10,
-              border: '1px solid #d1d5db',
-              fontWeight: 800,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Kelola Sesi
-          </Link>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {selectedSessionId && (
+              <a
+                href={`/admin/peserta/export.csv?session_id=${selectedSessionId}`}
+                style={{
+                  background: '#111827',
+                  color: '#fff',
+                  padding: '11px 15px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Export CSV
+              </a>
+            )}
+            <Link
+              href="/admin/sesi"
+              style={{
+                background: '#ffffff',
+                color: '#111827',
+                padding: '11px 15px',
+                borderRadius: 10,
+                border: '1px solid #d1d5db',
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Kelola Sesi
+            </Link>
+          </div>
         </div>
 
         {sessionsError && (

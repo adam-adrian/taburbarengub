@@ -1,0 +1,150 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+type UserSummary = {
+  nama: string
+  email: string
+  no_hp: string
+  profesi: string | null
+  domisili: string | null
+}
+
+type ExportBooking = {
+  id: string
+  status: string
+  created_at: string
+  checked_in_at: string | null
+  users: UserSummary | UserSummary[] | null
+}
+
+function getUser(booking: ExportBooking) {
+  if (Array.isArray(booking.users)) {
+    return booking.users[0] ?? null
+  }
+
+  return booking.users
+}
+
+function escapeCsvCell(value: string | number | null | undefined) {
+  const text = value === null || value === undefined ? '' : String(value)
+  return `"${text.replaceAll('"', '""')}"`
+}
+
+function toCsv(rows: Array<Array<string | number | null | undefined>>) {
+  return rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n')
+}
+
+function safeFilename(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+
+export async function GET(request: Request) {
+  const supabase = await createClient()
+  const url = new URL(request.url)
+  const sessionId = url.searchParams.get('session_id')
+
+  if (!sessionId) {
+    return NextResponse.json({ error: 'session_id wajib diisi' }, { status: 400 })
+  }
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Kamu harus login dulu' }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
+  }
+
+  const { data: session, error: sessionError } = await supabase
+    .from('event_sessions')
+    .select('id, nama_sesi, tanggal_waktu')
+    .eq('id', sessionId)
+    .maybeSingle()
+
+  if (sessionError || !session) {
+    return NextResponse.json({ error: 'Sesi tidak ditemukan' }, { status: 404 })
+  }
+
+  const { data: bookingsData, error: bookingsError } = await supabase
+    .from('bookings')
+    .select(
+      `
+      id,
+      status,
+      created_at,
+      checked_in_at,
+      users (
+        nama,
+        email,
+        no_hp,
+        profesi,
+        domisili
+      )
+    `
+    )
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true })
+
+  if (bookingsError) {
+    return NextResponse.json({ error: 'Gagal memuat data peserta' }, { status: 500 })
+  }
+
+  const bookings = (bookingsData ?? []) as unknown as ExportBooking[]
+
+  const rows: Array<Array<string | number | null | undefined>> = [
+    [
+      'nama',
+      'email',
+      'no_hp',
+      'profesi',
+      'domisili',
+      'status_booking',
+      'waktu_booking',
+      'waktu_check_in',
+      'booking_id',
+    ],
+    ...bookings.map((booking) => {
+      const participant = getUser(booking)
+
+      return [
+        participant?.nama,
+        participant?.email,
+        participant?.no_hp,
+        participant?.profesi,
+        participant?.domisili,
+        booking.status,
+        booking.created_at,
+        booking.checked_in_at,
+        booking.id,
+      ]
+    }),
+  ]
+
+  // UTF-8 BOM helps Excel/LibreOffice detect Indonesian text correctly.
+  const csv = `\uFEFF${toCsv(rows)}\n`
+  const filename = `peserta-${safeFilename(session.nama_sesi) || session.id}.csv`
+
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    },
+  })
+}
