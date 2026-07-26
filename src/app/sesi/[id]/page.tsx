@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BookingButton } from './booking-button'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -32,6 +33,15 @@ export default async function SessionDetailPage({
   if (error || !session) {
     notFound()
   }
+
+  const { data: existingBooking } = user
+    ? await supabase
+        .from('bookings')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('session_id', session.id)
+        .maybeSingle()
+    : { data: null }
 
   const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
   const isOffline = session.tipe === 'offline'
@@ -118,10 +128,22 @@ export default async function SessionDetailPage({
               <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
                 Kuota penuh
               </button>
+            ) : existingBooking ? (
+              <Link
+                href="/tiket-saya"
+                style={{
+                  background: '#ecfdf5',
+                  color: '#047857',
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  fontWeight: 700,
+                  border: '1px solid #a7f3d0',
+                }}
+              >
+                Kamu sudah booking — lihat tiket
+              </Link>
             ) : user ? (
-              <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
-                Booking Seat — disambungkan di step berikutnya
-              </button>
+              <BookingButton sessionId={session.id} />
             ) : (
               <Link
                 href="/login"
