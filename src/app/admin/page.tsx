@@ -51,20 +51,15 @@ export default function AdminDashboardPage() {
                 style={{
                   height: '100%',
                   border: '1px solid #e5e7eb',
-                  background: item.disabled ? '#f9fafb' : '#ffffff',
+                  background: '#ffffff',
                   borderRadius: 16,
                   padding: 20,
-                  opacity: item.disabled ? 0.65 : 1,
                 }}
               >
                 <h2 style={{ fontSize: 22, marginBottom: 8 }}>{item.title}</h2>
                 <p style={{ color: '#6b7280', lineHeight: 1.6 }}>{item.description}</p>
               </article>
             )
-
-            if (item.disabled) {
-              return <div key={item.href}>{card}</div>
-            }
 
             return (
               <Link key={item.href} href={item.href} style={{ display: 'block' }}>

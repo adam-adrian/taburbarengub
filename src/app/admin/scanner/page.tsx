@@ -77,6 +77,7 @@ export default function AdminScannerPage() {
   const [result, setResult] = useState<string | null>(null)
   const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null)
   const [checkingIn, setCheckingIn] = useState(false)
+  const [scannerAvailable, setScannerAvailable] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function stopScanner() {
@@ -92,6 +93,7 @@ export default function AdminScannerPage() {
       // Gagal stop/clear tidak perlu bikin UI error.
     } finally {
       scannerRef.current = null
+      setScannerAvailable(false)
       setStatus('stopped')
     }
   }
@@ -159,6 +161,7 @@ export default function AdminScannerPage() {
       const { Html5Qrcode } = (await import('html5-qrcode')) as unknown as Html5QrcodeModule
       const scanner = new Html5Qrcode(READER_ELEMENT_ID)
       scannerRef.current = scanner
+      setScannerAvailable(true)
 
       const config: ScannerStartConfig = {
         fps: 10,
@@ -195,6 +198,7 @@ export default function AdminScannerPage() {
       setStatus('scanning')
     } catch (err) {
       scannerRef.current = null
+      setScannerAvailable(false)
       setStatus('error')
       setError(err instanceof Error ? err.message : 'Gagal menyalakan scanner QR')
     }
@@ -294,7 +298,7 @@ export default function AdminScannerPage() {
             <button
               type="button"
               onClick={stopScanner}
-              disabled={!scannerRef.current}
+              disabled={!scannerAvailable}
               style={{
                 background: '#ffffff',
                 color: '#111827',
@@ -302,7 +306,7 @@ export default function AdminScannerPage() {
                 borderRadius: 10,
                 padding: '11px 16px',
                 fontWeight: 800,
-                cursor: scannerRef.current ? 'pointer' : 'not-allowed',
+                cursor: scannerAvailable ? 'pointer' : 'not-allowed',
               }}
             >
               Stop
