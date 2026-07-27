@@ -46,6 +46,7 @@ export default async function SessionDetailPage({
   const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
   const isOffline = session.tipe === 'offline'
   const isFull = sisaKuota <= 0
+  const isPast = new Date(session.tanggal_waktu) <= new Date()
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
@@ -105,9 +106,11 @@ export default async function SessionDetailPage({
             <div>
               <dt style={{ fontSize: 13, color: '#6b7280', fontWeight: 700 }}>Kuota</dt>
               <dd style={{ marginTop: 4 }}>
-                {session.tipe === 'offline'
-                  ? `${sisaKuota} seat tersisa dari ${session.kapasitas}`
-                  : 'Sesi online belum dibuka untuk booking di Fase 1'}
+                {isPast
+                  ? 'Sesi sudah selesai'
+                  : session.tipe === 'offline'
+                    ? `${sisaKuota} seat tersisa dari ${session.kapasitas}`
+                    : 'Sesi online belum dibuka untuk booking di Fase 1'}
               </dd>
             </div>
           </dl>
@@ -120,7 +123,11 @@ export default async function SessionDetailPage({
           )}
 
           <div style={{ marginTop: 32, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {!isOffline ? (
+            {isPast ? (
+              <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
+                Sesi sudah selesai
+              </button>
+            ) : !isOffline ? (
               <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
                 Sesi online terkunci
               </button>

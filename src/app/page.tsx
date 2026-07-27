@@ -35,20 +35,35 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: hero }, { data: sessions, error: sessionsError }, { data: profile }] =
-    await Promise.all([
-      supabase.from('hero_content').select('*').eq('id', 1).maybeSingle(),
-      supabase
-        .from('event_sessions')
-        .select('*')
-        .eq('status', 'published')
-        .order('tanggal_waktu', { ascending: true }),
-      user
-        ? supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-        : Promise.resolve({ data: null }),
-    ])
+  const nowIso = new Date().toISOString()
 
-  const upcomingSessions = sessions ?? []
+  const [
+    { data: hero },
+    { data: upcomingSessionsData, error: upcomingSessionsError },
+    { data: historySessionsData, error: historySessionsError },
+    { data: profile },
+  ] = await Promise.all([
+    supabase.from('hero_content').select('*').eq('id', 1).maybeSingle(),
+    supabase
+      .from('event_sessions')
+      .select('*')
+      .eq('status', 'published')
+      .gte('tanggal_waktu', nowIso)
+      .order('tanggal_waktu', { ascending: true }),
+    supabase
+      .from('event_sessions')
+      .select('*')
+      .eq('status', 'published')
+      .lt('tanggal_waktu', nowIso)
+      .order('tanggal_waktu', { ascending: false })
+      .limit(6),
+    user
+      ? supabase.from('users').select('role').eq('id', user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const upcomingSessions = upcomingSessionsData ?? []
+  const historySessions = historySessionsData ?? []
   const isAdmin = profile?.role === 'admin'
 
   return (
@@ -220,13 +235,13 @@ export default async function Home() {
           </p>
         </div>
 
-        {sessionsError && (
+        {upcomingSessionsError && (
           <div role="alert" style={{ border: '1px solid #fecaca', background: '#fef2f2', padding: 16 }}>
             Gagal memuat sesi. Coba refresh halaman.
           </div>
         )}
 
-        {!sessionsError && upcomingSessions.length === 0 && (
+        {!upcomingSessionsError && upcomingSessions.length === 0 && (
           <div style={{ border: '1px dashed #d1d5db', background: '#fff', padding: 24, borderRadius: 14 }}>
             Belum ada sesi published yang tersedia.
           </div>
@@ -295,6 +310,72 @@ export default async function Home() {
           })}
         </div>
       </section>
+
+      {(historySessionsError || historySessions.length > 0) && (
+        <section style={{ maxWidth: 1120, margin: '0 auto', padding: '0 20px 80px' }}>
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 32, letterSpacing: -0.8, marginBottom: 8 }}>Histori Sesi</h2>
+            <p style={{ color: '#6b7280' }}>
+              Arsip sesi yang sudah selesai. Untuk Fase 1, halaman ini bersifat informatif; replay video menyusul di fase berikutnya.
+            </p>
+          </div>
+
+          {historySessionsError && (
+            <div role="alert" style={{ border: '1px solid #fecaca', background: '#fef2f2', padding: 16 }}>
+              Gagal memuat histori sesi. Coba refresh halaman.
+            </div>
+          )}
+
+          {!historySessionsError && historySessions.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+              {historySessions.map((session) => (
+                <article
+                  key={session.id}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    background: '#ffffff',
+                    borderRadius: 16,
+                    padding: 20,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                    <h3 style={{ fontSize: 20, lineHeight: 1.3 }}>{session.nama_sesi}</h3>
+                    <span style={sessionTypeStyle(session.tipe)}>{sessionTypeLabel(session.tipe)}</span>
+                  </div>
+
+                  <div style={{ color: '#4b5563', lineHeight: 1.6 }}>
+                    <p>{formatDateTime(session.tanggal_waktu)} WIB</p>
+                    {session.lokasi_atau_link && <p>{session.lokasi_atau_link}</p>}
+                  </div>
+
+                  <p style={{ color: '#6b7280', lineHeight: 1.6, flex: 1 }}>
+                    {session.deskripsi ?? 'Sesi ini sudah selesai.'}
+                  </p>
+
+                  <strong style={{ color: '#374151', fontSize: 14 }}>Sesi sudah selesai</strong>
+
+                  <Link
+                    href={`/sesi/${session.id}`}
+                    style={{
+                      textAlign: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      background: '#f3f4f6',
+                      color: '#111827',
+                    }}
+                  >
+                    Lihat Detail
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Wireframe screen 1 meminta footer berisi info kontak / sosial media.
           Yang dirender di sini baru kerangkanya, karena kontak dan akun sosial
