@@ -316,7 +316,7 @@ export default async function Home() {
             {hero?.judul_acara ?? 'Tabur Bareng UB'}
           </p>
           <p style={{ marginTop: 6 }}>
-            © {new Date().getFullYear()} — Program kajian berkelanjutan Universitas Brawijaya.
+            © {new Date().getFullYear()} — Program kajian berkelanjutan Al Fatih.
           </p>
         </div>
       </footer>
