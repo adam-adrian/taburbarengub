@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.types'
 
@@ -12,49 +11,48 @@ export class BookingError extends Error {
   }
 }
 
-function generateQrToken(): string {
-  // 32 byte random — JANGAN pakai booking id atau angka urut,
-  // itu bisa ditebak orang buat check-in palsu.
-  return randomBytes(32).toString('hex')
+// Dipetakan dari SQLSTATE, bukan dari isi pesan.
+//
+// Sebelumnya pemetaan memakai error.message.includes('...') terhadap teks
+// Bahasa Indonesia yang dimiliki SQL. Itu rapuh dua arah: mengubah satu kata
+// di `raise exception` membuat mapping-nya diam-diam jatuh ke 500, dan copy
+// user-facing jadi hidup di dua tempat dengan bunyi yang berbeda. Kode P0001
+// juga dipakai untuk empat kondisi berbeda sehingga tidak bisa dibedakan.
+//
+// Sekarang database memiliki KODE, aplikasi memiliki KALIMAT. Itu yang bikin
+// aplikasi native atau UI berbahasa lain nanti tidak perlu menyentuh Postgres.
+const PETA_ERROR: Record<string, { pesan: string; status: number }> = {
+  '28000': { pesan: 'Kamu harus login dulu', status: 401 },
+  TB101: { pesan: 'Sesi tidak ditemukan', status: 404 },
+  TB102: { pesan: 'Sesi online belum bisa dibooking di Fase 1', status: 403 },
+  TB103: { pesan: 'Kuota sesi ini sudah penuh', status: 409 },
+  TB104: { pesan: 'Sesi ini sudah lewat', status: 409 },
+  TB105: { pesan: 'Kamu sudah booking sesi ini sebelumnya', status: 409 },
 }
 
 export async function createBooking(
   supabase: SupabaseClient<Database>,
   sessionId: string
 ): Promise<Booking> {
-  const qrToken = generateQrToken()
-
-  // Manggil RPC di database (lihat schema-fase1.sql: create_booking).
-  // Semua logic "cek kuota, kunci row, insert" jalan atomic di sana —
-  // di sini kita cuma manggil dan nangkep hasilnya.
+  // qr_token TIDAK dikirim dari sini lagi. Dulu dibuat di Node lalu diteruskan
+  // ke RPC, padahal RPC-nya ter-grant ke `authenticated` — jadi user login mana
+  // pun bisa memanggil PostgREST langsung dan memilih token untuk tiketnya
+  // sendiri, melewati seluruh validasi di lapisan ini. Sekarang token dibuat di
+  // dalam RPC pakai gen_random_bytes dan parameternya sudah dihapus.
   const { data, error } = await supabase
-    .rpc('create_booking', {
-      p_session_id: sessionId,
-      p_qr_token: qrToken,
-    })
+    .rpc('create_booking', { p_session_id: sessionId })
     .single()
 
   if (error) {
-    // Pesan dari `raise exception` di Postgres nyampe ke sini persis
-    if (error.message.includes('harus login')) {
-      throw new BookingError('Kamu harus login dulu', 401)
+    const dikenal = error.code ? PETA_ERROR[error.code] : undefined
+
+    if (dikenal) {
+      throw new BookingError(dikenal.pesan, dikenal.status)
     }
-    if (error.message.includes('Sesi tidak ditemukan')) {
-      throw new BookingError('Sesi tidak ditemukan', 404)
-    }
-    if (error.message.includes('belum tersedia untuk booking')) {
-      throw new BookingError('Sesi ini belum dibuka untuk booking', 403)
-    }
-    if (error.message.includes('belum bisa dibooking')) {
-      throw new BookingError('Sesi online belum bisa dibooking di Fase 1', 403)
-    }
-    if (error.message.includes('Kuota penuh')) {
-      throw new BookingError('Kuota sesi ini sudah penuh', 409)
-    }
-    if (error.code === '23505' || error.message.includes('sudah booking')) {
-      // nabrak constraint unique_user_per_session
-      throw new BookingError('Kamu sudah booking sesi ini sebelumnya', 409)
-    }
+
+    // Kode tak dikenal berarti ada kondisi baru di SQL yang belum dipetakan.
+    // Dicatat supaya ketahuan, bukan disembunyikan jadi 500 tanpa jejak.
+    console.error('create_booking: errcode tidak dikenal', error.code, error.message)
     throw new BookingError('Gagal membuat booking, coba lagi', 500)
   }
 

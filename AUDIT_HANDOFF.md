@@ -30,7 +30,9 @@ Catatan:
 
 ## 3. Database / Supabase assumptions
 
-Schema utama berasal dari `schema-fase1.sql`, dengan patch v2 sudah diaplikasikan di Supabase live.
+Schema utama sedang dipindahkan ke `supabase/migrations/`, yang menjadi satu-satunya sumber otoritatif.
+
+Catatan penting untuk reviewer: `schema-fase1.sql` yang dirujuk versi sebelumnya sudah tidak ada, dan `schema-fase1-final.sql` yang menggantikannya **belum tentu cocok dengan database live** — patch v2 diaplikasikan langsung di Supabase tanpa melewati file. Karena itu baseline migration diambil dari database live (`supabase db pull`), bukan dari file, lalu di-diff terhadap file untuk menemukan drift-nya. Sampai langkah itu selesai, jangan menganggap file `.sql` mana pun di root sebagai kebenaran.
 
 Entitas utama:
 

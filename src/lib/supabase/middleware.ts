@@ -5,7 +5,23 @@ import { NextResponse, type NextRequest } from 'next/server'
 // refresh token session Supabase biar user nggak random ke-logout.
 // JANGAN taro logic proteksi route/role di sini — itu tempatnya di
 // masing-masing layout.tsx (app/(member)/layout.tsx, app/admin/layout.tsx).
+// @supabase/ssr menyimpan sesi di cookie `sb-<project-ref>-auth-token`, dan
+// memecahnya jadi `...auth-token.0`, `.1` kalau kepanjangan.
+function punyaCookieSesi(request: NextRequest) {
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith('sb-') && cookie.name.includes('-auth-token'))
+}
+
 export async function updateSession(request: NextRequest) {
+  // Pengunjung anonim tidak punya sesi untuk di-refresh, jadi getUser() di bawah
+  // cuma menghasilkan satu round trip ke Supabase Auth untuk dijawab null.
+  // Landing page publik adalah halaman paling ramai di project ini — mendekati
+  // tanggal sesi, ini beda antara nol dan satu panggilan jaringan per kunjungan.
+  if (!punyaCookieSesi(request)) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

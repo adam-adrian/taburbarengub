@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // State sesi tooling, bukan sumber project.
+    ".remember/**",
+    "supabase/.temp/**",
   ]),
 ]);
 

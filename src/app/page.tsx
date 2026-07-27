@@ -105,78 +105,109 @@ export default async function Home() {
         </div>
       </header>
 
+      {/* PRD 5.2 mewajibkan urutan tetap: (1) Judul Acara, (2) Filosofi "Tabur",
+          (3) Tagline, (4) Profil pemateri — baru setelah itu daftar sesi.
+          Sebelumnya Tagline dan Filosofi tertukar, dan keduanya terpecah ke dua
+          kolom grid sehingga urutan bacanya tidak pernah sesuai PRD. Sekarang
+          satu kolom berurutan; penataan visualnya diserahkan ke designer. */}
       <section style={{ background: '#ffffff' }}>
         <div
           style={{
-            maxWidth: 1120,
+            maxWidth: 760,
             margin: '0 auto',
             padding: '72px 20px 56px',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 32,
-            alignItems: 'center',
           }}
         >
+          {/* (1) Judul Acara */}
           <div>
             <p style={{ color: '#6b7280', fontWeight: 700, marginBottom: 12 }}>
               Program kajian berkelanjutan
             </p>
-            <h1 style={{ fontSize: 48, lineHeight: 1.05, letterSpacing: -1.5, marginBottom: 18 }}>
+            <h1 style={{ fontSize: 48, lineHeight: 1.05, letterSpacing: -1.5 }}>
               {hero?.judul_acara ?? 'Tabur Bareng UB'}
             </h1>
-            <p style={{ fontSize: 20, lineHeight: 1.6, color: '#374151', marginBottom: 24 }}>
-              {hero?.tagline ?? 'Tadabbur kekuatan muslimin yang tertidur'}
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <a
-                href="#sesi"
-                style={{
-                  background: '#111827',
-                  color: '#fff',
-                  padding: '12px 16px',
-                  borderRadius: 10,
-                  fontWeight: 700,
-                }}
-              >
-                Lihat Sesi
-              </a>
-              {!user && (
-                <Link
-                  href="/register"
-                  style={{
-                    background: '#f3f4f6',
-                    color: '#111827',
-                    padding: '12px 16px',
-                    borderRadius: 10,
-                    fontWeight: 700,
-                  }}
-                >
-                  Buat Akun
-                </Link>
-              )}
-            </div>
           </div>
 
+          {/* (2) Filosofi "Tabur" */}
+          <div>
+            <h2 style={{ fontSize: 20, marginBottom: 12 }}>Filosofi Tabur</h2>
+            <p style={{ color: '#4b5563', lineHeight: 1.7 }}>
+              {hero?.filosofi_tabur ??
+                'Tabur adalah ikhtiar menebar ilmu dan menumbuhkan kesadaran melalui tadabbur yang bertahap, terarah, dan konsisten.'}
+            </p>
+          </div>
+
+          {/* (3) Tagline / pesan inti program */}
+          <p style={{ fontSize: 20, lineHeight: 1.6, color: '#374151' }}>
+            {hero?.tagline ?? 'Tadabbur kekuatan muslimin yang tertidur'}
+          </p>
+
+          {/* (4) Profil singkat pemateri utama */}
           <div
             style={{
               border: '1px solid #e5e7eb',
               borderRadius: 18,
               padding: 24,
               background: '#f9fafb',
+              display: 'flex',
+              gap: 20,
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
             }}
           >
-            <h2 style={{ fontSize: 20, marginBottom: 12 }}>Filosofi Tabur</h2>
-            <p style={{ color: '#4b5563', lineHeight: 1.7, marginBottom: 24 }}>
-              {hero?.filosofi_tabur ??
-                'Tabur adalah ikhtiar menebar ilmu dan menumbuhkan kesadaran melalui tadabbur yang bertahap, terarah, dan konsisten.'}
-            </p>
-            <h2 style={{ fontSize: 20, marginBottom: 12 }}>
-              {hero?.nama_pemateri ?? 'Ustadz Budi Ashari'}
-            </h2>
-            <p style={{ color: '#4b5563', lineHeight: 1.7 }}>
-              {hero?.bio_pemateri ??
-                'Profil singkat pemateri utama akan ditampilkan di sini. Konten ini dikelola sebagai konten global landing page.'}
-            </p>
+            {hero?.foto_pemateri_url && (
+              // Sengaja <img>, bukan next/image: URL-nya diisi admin lewat CMS
+              // dan hostnya bisa berubah kapan saja, jadi tidak cocok dengan
+              // images.remotePatterns yang harus ditulis di build config.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={hero.foto_pemateri_url}
+                alt={`Foto ${hero.nama_pemateri ?? 'pemateri'}`}
+                width={120}
+                height={120}
+                style={{ borderRadius: 12, objectFit: 'cover', flexShrink: 0 }}
+              />
+            )}
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <h2 style={{ fontSize: 20, marginBottom: 12 }}>
+                {hero?.nama_pemateri ?? 'Ustadz Budi Ashari'}
+              </h2>
+              <p style={{ color: '#4b5563', lineHeight: 1.7 }}>
+                {hero?.bio_pemateri ??
+                  'Profil singkat pemateri utama akan ditampilkan di sini. Konten ini dikelola sebagai konten global landing page.'}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <a
+              href="#sesi"
+              style={{
+                background: '#111827',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: 10,
+                fontWeight: 700,
+              }}
+            >
+              Lihat Sesi
+            </a>
+            {!user && (
+              <Link
+                href="/register"
+                style={{
+                  background: '#f3f4f6',
+                  color: '#111827',
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  fontWeight: 700,
+                }}
+              >
+                Buat Akun
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -264,6 +295,31 @@ export default async function Home() {
           })}
         </div>
       </section>
+
+      {/* Wireframe screen 1 meminta footer berisi info kontak / sosial media.
+          Yang dirender di sini baru kerangkanya, karena kontak dan akun sosial
+          yang asli belum ada di mana pun — tidak di hero_content, tidak di PRD.
+          Menaruh nilai karangan di sini lebih buruk daripada mengosongkannya.
+          Begitu panitia memberi datanya, tambahkan kolomnya ke hero_content
+          supaya ikut bisa diedit lewat CMS admin, bukan di-hardcode. */}
+      <footer style={{ borderTop: '1px solid #e5e7eb', background: '#ffffff' }}>
+        <div
+          style={{
+            maxWidth: 1120,
+            margin: '0 auto',
+            padding: '32px 20px',
+            color: '#6b7280',
+            fontSize: 14,
+          }}
+        >
+          <p style={{ fontWeight: 700, color: '#111827' }}>
+            {hero?.judul_acara ?? 'Tabur Bareng UB'}
+          </p>
+          <p style={{ marginTop: 6 }}>
+            © {new Date().getFullYear()} — Program kajian berkelanjutan Universitas Brawijaya.
+          </p>
+        </div>
+      </footer>
     </main>
   )
 }

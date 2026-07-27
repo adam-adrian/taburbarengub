@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:types": "supabase gen types typescript --local | grep -v '^{\"_tag\":\"Error\"' > src/lib/types/database.types.ts",
+    "db:types:linked": "supabase gen types typescript --linked | grep -v '^{\"_tag\":\"Error\"' > src/lib/types/database.types.ts",
+    "db:diff": "supabase db diff --linked",
+    "db:push": "supabase db push --linked"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -15,7 +19,8 @@
     "next": "16.2.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-qr-code": "^2.2.0"
+    "react-qr-code": "^2.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -24,6 +29,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
+    "supabase": "^2.109.1",
     "typescript": "^5"
   },
   "allowScripts": {

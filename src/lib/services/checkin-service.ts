@@ -9,6 +9,21 @@ export class CheckInError extends Error {
   }
 }
 
+// Dipetakan dari SQLSTATE, bukan dari isi pesan — lihat alasan lengkapnya di
+// booking-service.ts.
+//
+// 42501 datang dari dua arah dan keduanya memang 403: guard is_admin() di
+// dalam fungsi, dan penolakan izin oleh Postgres sendiri untuk pemanggil yang
+// tidak berhak. Yang kedua membawa pesan internal "permission denied for
+// function check_in_booking", jadi penting kita mengganti kalimatnya di sini
+// alih-alih meneruskannya ke layar staff.
+const PETA_ERROR: Record<string, { pesan: string; status: number }> = {
+  '42501': { pesan: 'Akses ditolak', status: 403 },
+  TB201: { pesan: 'QR tidak valid', status: 404 },
+  TB202: { pesan: 'QR sudah dipakai', status: 409 },
+  TB203: { pesan: 'Booking tidak aktif', status: 409 },
+}
+
 export async function checkInBooking(
   supabase: SupabaseClient<Database>,
   qrToken: string
@@ -18,19 +33,13 @@ export async function checkInBooking(
     .single()
 
   if (error) {
-    if (error.message.includes('Akses ditolak') || error.code === '42501') {
-      throw new CheckInError('Akses ditolak', 403)
-    }
-    if (error.message.includes('QR tidak valid')) {
-      throw new CheckInError('QR tidak valid', 404)
-    }
-    if (error.message.includes('QR sudah dipakai')) {
-      throw new CheckInError('QR sudah dipakai', 409)
-    }
-    if (error.message.includes('Booking tidak aktif')) {
-      throw new CheckInError('Booking tidak aktif', 409)
+    const dikenal = error.code ? PETA_ERROR[error.code] : undefined
+
+    if (dikenal) {
+      throw new CheckInError(dikenal.pesan, dikenal.status)
     }
 
+    console.error('check_in_booking: errcode tidak dikenal', error.code, error.message)
     throw new CheckInError('Gagal memproses check-in, coba lagi', 500)
   }
 

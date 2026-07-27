@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -118,6 +119,10 @@ export default function RegisterPage() {
       <button type="submit" disabled={loading}>
         {loading ? 'Memproses...' : 'Daftar'}
       </button>
+
+      <p>
+        Sudah punya akun? <Link href="/login">Masuk</Link>
+      </p>
     </form>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -65,6 +66,13 @@ export default function LoginPage() {
       <button type="submit" disabled={loading}>
         {loading ? 'Memproses...' : 'Masuk'}
       </button>
+
+      {/* Tanpa ini, pengunjung yang mendarat di /login dan belum punya akun
+          harus mengetik URL sendiri untuk sampai ke pendaftaran.
+          Link "Lupa password?" menyusul bersama fitur reset password. */}
+      <p>
+        Belum punya akun? <Link href="/register">Daftar</Link>
+      </p>
     </form>
   )
 }

@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase — state lokal CLI, bukan bagian project.
+# Berisi project ref, organization id, dan pooler URL.
+supabase/.temp
+
+# Local review / backup artifacts
+backup-*.sql
+*.zip.txt
+2026-*-coba-review-project-ini.txt
+
+# Local env overrides
+.env.development.local
+.env.development.local.bak
+
+# Supabase local/temp state
+supabase/.temp/
+
+# TypeScript incremental
+*.tsbuildinfo
