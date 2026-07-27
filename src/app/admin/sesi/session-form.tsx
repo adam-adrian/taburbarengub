@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database.types'
 
 type EventSession = Database['public']['Tables']['event_sessions']['Row']
@@ -45,7 +44,6 @@ function createInitialState(session?: EventSession): SessionFormState {
 
 export function SessionForm({ session }: { session?: EventSession }) {
   const router = useRouter()
-  const supabase = createClient()
   const [form, setForm] = useState<SessionFormState>(() => createInitialState(session))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -95,19 +93,38 @@ export function SessionForm({ session }: { session?: EventSession }) {
       status: form.status,
     }
 
-    const { error: saveError } = isEditing
-      ? await supabase.from('event_sessions').update(payload).eq('id', session!.id)
-      : await supabase.from('event_sessions').insert(payload)
+    try {
+      const response = await fetch(
+        isEditing ? `/api/admin/sessions/${session!.id}` : '/api/admin/sessions',
+        {
+          method: isEditing ? 'PATCH' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      )
 
-    setLoading(false)
+      const result = (await response.json().catch(() => null)) as
+        | { error?: unknown }
+        | null
 
-    if (saveError) {
-      setError(saveError.message)
-      return
+      if (!response.ok) {
+        const message =
+          typeof result?.error === 'string'
+            ? result.error
+            : 'Gagal menyimpan sesi, coba lagi'
+        setError(message)
+        return
+      }
+
+      router.push('/admin/sesi')
+      router.refresh()
+    } catch {
+      setError('Tidak bisa terhubung ke server, coba lagi')
+    } finally {
+      setLoading(false)
     }
-
-    router.push('/admin/sesi')
-    router.refresh()
   }
 
   return (
