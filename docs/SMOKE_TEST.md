@@ -84,6 +84,7 @@ Gunakan HP/browser admin untuk test scanner di HTTPS deploy URL.
 - [ ] Admin bisa membuka `/admin/scanner`.
 - [ ] Browser meminta izin kamera.
 - [ ] QR tiket valid menghasilkan `Check-in berhasil`.
+- [ ] Hasil check-in menampilkan nama sesi dan jadwal sesi.
 - [ ] `bookings.status` berubah menjadi `checked_in`.
 - [ ] `checked_in_at` terisi.
 - [ ] Scan ulang QR yang sama menghasilkan `QR sudah dipakai`.

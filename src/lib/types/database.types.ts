@@ -204,7 +204,9 @@ export type Database = {
           booking_status: string
           checked_in_at: string
           nama: string
+          nama_sesi: string
           session_id: string
+          tanggal_waktu: string
           user_id: string
         }[]
       }
