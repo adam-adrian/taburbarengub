@@ -27,6 +27,51 @@ function sessionTypeStyle(type: string) {
   } as const
 }
 
+function bookingStatusLabel(status: string) {
+  if (status === 'checked_in') return 'Sudah check-in'
+  if (status === 'cancelled') return 'Tiket dibatalkan'
+  return 'Sudah booking'
+}
+
+function bookingStatusBadgeStyle(status: string) {
+  if (status === 'checked_in') {
+    return {
+      display: 'inline-flex',
+      borderRadius: 999,
+      padding: '4px 10px',
+      fontSize: 12,
+      fontWeight: 800,
+      background: '#ecfdf5',
+      color: '#047857',
+      border: '1px solid #a7f3d0',
+    } as const
+  }
+
+  if (status === 'cancelled') {
+    return {
+      display: 'inline-flex',
+      borderRadius: 999,
+      padding: '4px 10px',
+      fontSize: 12,
+      fontWeight: 800,
+      background: '#fef2f2',
+      color: '#b91c1c',
+      border: '1px solid #fecaca',
+    } as const
+  }
+
+  return {
+    display: 'inline-flex',
+    borderRadius: 999,
+    padding: '4px 10px',
+    fontSize: 12,
+    fontWeight: 800,
+    background: '#fef3c7',
+    color: '#92400e',
+    border: '1px solid #fde68a',
+  } as const
+}
+
 export default async function Home() {
   const supabase = await createClient()
 
@@ -41,6 +86,7 @@ export default async function Home() {
     { data: upcomingSessionsData, error: upcomingSessionsError },
     { data: historySessionsData, error: historySessionsError },
     { data: profile },
+    { data: userBookings },
   ] = await Promise.all([
     supabase.from('hero_content').select('*').eq('id', 1).maybeSingle(),
     supabase
@@ -59,10 +105,19 @@ export default async function Home() {
     user
       ? supabase.from('users').select('role').eq('id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
+    user
+      ? supabase
+          .from('bookings')
+          .select('id, session_id, status')
+          .eq('user_id', user.id)
+      : Promise.resolve({ data: [] }),
   ])
 
   const upcomingSessions = upcomingSessionsData ?? []
   const historySessions = historySessionsData ?? []
+  const bookingBySessionId = new Map(
+    (userBookings ?? []).map((booking) => [booking.session_id, booking])
+  )
   const isAdmin = profile?.role === 'admin'
 
   return (
@@ -251,6 +306,7 @@ export default async function Home() {
             const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
             const isOffline = session.tipe === 'offline'
             const isFull = sisaKuota <= 0
+            const existingBooking = bookingBySessionId.get(session.id)
 
             return (
               <article
@@ -267,7 +323,14 @@ export default async function Home() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
                   <h3 style={{ fontSize: 20, lineHeight: 1.3 }}>{session.nama_sesi}</h3>
-                  <span style={sessionTypeStyle(session.tipe)}>{sessionTypeLabel(session.tipe)}</span>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {existingBooking && (
+                      <span style={bookingStatusBadgeStyle(existingBooking.status)}>
+                        {bookingStatusLabel(existingBooking.status)}
+                      </span>
+                    )}
+                    <span style={sessionTypeStyle(session.tipe)}>{sessionTypeLabel(session.tipe)}</span>
+                  </div>
                 </div>
 
                 <div style={{ color: '#4b5563', lineHeight: 1.6 }}>
@@ -289,21 +352,37 @@ export default async function Home() {
                   )}
                 </div>
 
-                <Link
-                  href={`/sesi/${session.id}`}
-                  aria-disabled={!isOffline || isFull}
-                  style={{
-                    textAlign: 'center',
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    fontWeight: 700,
-                    background: !isOffline || isFull ? '#f3f4f6' : '#111827',
-                    color: !isOffline || isFull ? '#9ca3af' : '#ffffff',
-                    pointerEvents: !isOffline || isFull ? 'none' : 'auto',
-                  }}
-                >
-                  {!isOffline ? 'Terkunci' : isFull ? 'Kuota Penuh' : 'Lihat Detail'}
-                </Link>
+                {existingBooking && existingBooking.status !== 'cancelled' ? (
+                  <Link
+                    href={`/tiket-saya/${existingBooking.id}`}
+                    style={{
+                      textAlign: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      background: '#111827',
+                      color: '#ffffff',
+                    }}
+                  >
+                    Lihat Tiket
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/sesi/${session.id}`}
+                    aria-disabled={!isOffline || isFull}
+                    style={{
+                      textAlign: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      background: !isOffline || isFull ? '#f3f4f6' : '#111827',
+                      color: !isOffline || isFull ? '#9ca3af' : '#ffffff',
+                      pointerEvents: !isOffline || isFull ? 'none' : 'auto',
+                    }}
+                  >
+                    {!isOffline ? 'Terkunci' : isFull ? 'Kuota Penuh' : 'Lihat Detail'}
+                  </Link>
+                )}
               </article>
             )
           })}
@@ -327,7 +406,10 @@ export default async function Home() {
 
           {!historySessionsError && historySessions.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
-              {historySessions.map((session) => (
+              {historySessions.map((session) => {
+                const existingBooking = bookingBySessionId.get(session.id)
+
+                return (
                 <article
                   key={session.id}
                   style={{
@@ -342,7 +424,14 @@ export default async function Home() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
                     <h3 style={{ fontSize: 20, lineHeight: 1.3 }}>{session.nama_sesi}</h3>
-                    <span style={sessionTypeStyle(session.tipe)}>{sessionTypeLabel(session.tipe)}</span>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {existingBooking && (
+                        <span style={bookingStatusBadgeStyle(existingBooking.status)}>
+                          {bookingStatusLabel(existingBooking.status)}
+                        </span>
+                      )}
+                      <span style={sessionTypeStyle(session.tipe)}>{sessionTypeLabel(session.tipe)}</span>
+                    </div>
                   </div>
 
                   <div style={{ color: '#4b5563', lineHeight: 1.6 }}>
@@ -357,20 +446,25 @@ export default async function Home() {
                   <strong style={{ color: '#374151', fontSize: 14 }}>Sesi sudah selesai</strong>
 
                   <Link
-                    href={`/sesi/${session.id}`}
+                    href={
+                      existingBooking && existingBooking.status !== 'cancelled'
+                        ? `/tiket-saya/${existingBooking.id}`
+                        : `/sesi/${session.id}`
+                    }
                     style={{
                       textAlign: 'center',
                       padding: '10px 14px',
                       borderRadius: 10,
                       fontWeight: 700,
-                      background: '#f3f4f6',
-                      color: '#111827',
+                      background: existingBooking && existingBooking.status !== 'cancelled' ? '#111827' : '#f3f4f6',
+                      color: existingBooking && existingBooking.status !== 'cancelled' ? '#ffffff' : '#111827',
                     }}
                   >
-                    Lihat Detail
+                    {existingBooking && existingBooking.status !== 'cancelled' ? 'Lihat Tiket' : 'Lihat Detail'}
                   </Link>
                 </article>
-              ))}
+                )
+              })}
             </div>
           )}
         </section>
