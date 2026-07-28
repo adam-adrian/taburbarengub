@@ -8,6 +8,11 @@ const menuItems = [
     description: 'Lihat daftar sesi, status publikasi, dan kuota peserta.',
   },
   {
+    href: '/admin/hero',
+    title: 'Konten Landing',
+    description: 'Edit judul, filosofi, tagline, dan profil pemateri di landing page.',
+  },
+  {
     href: '/admin/scanner',
     title: 'Scan QR',
     description: 'Tool staff untuk check-in peserta di venue.',
