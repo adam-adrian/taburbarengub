@@ -69,7 +69,9 @@ Siapkan sesi offline published dengan tanggal masa depan dan kuota tersedia.
 - [ ] User bisa klik `Booking Seat`.
 - [ ] Setelah sukses, user diarahkan ke `/tiket-saya`.
 - [ ] Tiket tampil dengan status `Booked`.
-- [ ] QR tampil.
+- [ ] `/tiket-saya` menampilkan list tiket tanpa QR besar.
+- [ ] Klik `Lihat QR` membuka halaman detail satu tiket.
+- [ ] QR tampil hanya di halaman detail tiket.
 - [ ] Row `bookings` bertambah.
 - [ ] `event_sessions.kuota_terisi` naik.
 - [ ] Booking kedua untuk sesi yang sama ditolak / UI menampilkan sudah booking.

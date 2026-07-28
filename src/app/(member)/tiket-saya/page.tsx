@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { TicketQrCode } from './ticket-qr-code'
 
 type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
 
@@ -71,7 +70,7 @@ export default async function TiketSayaPage() {
 
   const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
-    .select('id, session_id, status, qr_token, created_at, checked_in_at')
+    .select('id, session_id, status, created_at, checked_in_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -99,7 +98,7 @@ export default async function TiketSayaPage() {
             </Link>
             <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Tiket Saya</h1>
             <p style={{ color: '#6b7280', marginTop: 8 }}>
-              QR ini ditunjukkan ke staff saat check-in di venue.
+              Pilih tiket untuk membuka QR check-in. Satu halaman detail hanya menampilkan satu QR agar tidak salah scan.
             </p>
           </div>
         </div>
@@ -210,19 +209,23 @@ export default async function TiketSayaPage() {
                   )}
                 </div>
 
-                <div style={{ display: 'grid', justifyItems: 'center', gap: 12 }}>
-                  {canShowQr ? (
-                    <>
-                      <TicketQrCode value={booking.qr_token} />
-                      <p style={{ color: '#6b7280', fontSize: 13, textAlign: 'center', lineHeight: 1.5 }}>
-                        Jangan bagikan QR ini ke orang lain.
-                      </p>
-                    </>
-                  ) : (
-                    <p style={{ color: '#6b7280', textAlign: 'center' }}>
-                      Tiket dibatalkan, QR tidak aktif.
-                    </p>
-                  )}
+                <div style={{ display: 'grid', justifyItems: 'start', gap: 10 }}>
+                  <Link
+                    href={`/tiket-saya/${booking.id}`}
+                    style={{
+                      background: canShowQr ? '#111827' : '#f3f4f6',
+                      color: canShowQr ? '#ffffff' : '#374151',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      fontWeight: 800,
+                      border: canShowQr ? '1px solid #111827' : '1px solid #d1d5db',
+                    }}
+                  >
+                    {canShowQr ? 'Lihat QR' : 'Lihat Detail'}
+                  </Link>
+                  <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.5 }}>
+                    QR hanya ditampilkan di halaman detail tiket untuk mengurangi risiko salah scan.
+                  </p>
                 </div>
               </article>
             )

@@ -22,7 +22,7 @@ export function BookingButton({ sessionId }: { sessionId: string }) {
       })
 
       const payload = (await response.json().catch(() => null)) as
-        | { data?: unknown; error?: unknown }
+        | { data?: { id?: unknown }; error?: unknown }
         | null
 
       if (!response.ok) {
@@ -34,7 +34,11 @@ export function BookingButton({ sessionId }: { sessionId: string }) {
         return
       }
 
-      router.push('/tiket-saya')
+      if (typeof payload?.data?.id === 'string') {
+        router.push(`/tiket-saya/${payload.data.id}`)
+      } else {
+        router.push('/tiket-saya')
+      }
       router.refresh()
     } catch {
       setError('Tidak bisa terhubung ke server, coba lagi')
