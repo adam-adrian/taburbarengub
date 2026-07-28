@@ -13,6 +13,7 @@ export default function RegisterPage() {
     nama: '',
     email: '',
     password: '',
+    confirmPassword: '',
     no_hp: '',
     usia: '',
     profesi: '',
@@ -30,6 +31,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+
+    if (form.password !== form.confirmPassword) {
+      setLoading(false)
+      setError('Konfirmasi password tidak sama')
+      return
+    }
 
     // Field tambahan (nama, no_hp, usia, dst) dikirim lewat `options.data`.
     // Ini yang ditangkep trigger `handle_new_user()` di database buat
@@ -79,6 +86,17 @@ export default function RegisterPage() {
           type="password"
           value={form.password}
           onChange={updateField('password')}
+          minLength={8}
+          required
+        />
+      </label>
+
+      <label>
+        Konfirmasi Password
+        <input
+          type="password"
+          value={form.confirmPassword}
+          onChange={updateField('confirmPassword')}
           minLength={8}
           required
         />

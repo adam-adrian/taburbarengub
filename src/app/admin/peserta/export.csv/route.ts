@@ -63,6 +63,28 @@ function safeFilename(value: string) {
     .slice(0, 80)
 }
 
+function formatDateTimeForFilename(date: Date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+
+  const year = parts.find((part) => part.type === 'year')?.value ?? '0000'
+  const month = parts.find((part) => part.type === 'month')?.value ?? '00'
+  const day = parts.find((part) => part.type === 'day')?.value ?? '00'
+  const hour = parts.find((part) => part.type === 'hour')?.value ?? '00'
+  const minute = parts.find((part) => part.type === 'minute')?.value ?? '00'
+
+  // Format sesuai permintaan: tanggal+waktu. Pakai '-' untuk jam agar aman
+  // di Windows/macOS/Linux, bukan ':' yang bermasalah di beberapa filesystem.
+  return `${year}-${month}-${day}+${hour}-${minute}`
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient()
   const url = new URL(request.url)
@@ -158,7 +180,10 @@ export async function GET(request: Request) {
 
   // UTF-8 BOM helps Excel/LibreOffice detect Indonesian text correctly.
   const csv = `\uFEFF${toCsv(rows)}\n`
-  const filename = `peserta-${safeFilename(session.nama_sesi) || session.id}.csv`
+  const sessionIdentifier = session.id.slice(0, 8)
+  const sessionName = safeFilename(session.nama_sesi) || 'sesi'
+  const exportDateTime = formatDateTimeForFilename(new Date())
+  const filename = `${sessionIdentifier}_${sessionName}_${exportDateTime}.csv`
 
   return new Response(csv, {
     status: 200,
