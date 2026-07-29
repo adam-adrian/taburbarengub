@@ -50,6 +50,7 @@ export default function LoginPage() {
             borderRadius: 18,
             padding: 24,
             boxShadow: '0 10px 30px rgba(17, 24, 39, 0.06)',
+            boxSizing: 'border-box',
           }}
         >
           <div>
@@ -64,7 +65,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <label style={{ display: 'grid', gap: 6 }}>
+          <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
             <span style={{ fontWeight: 700 }}>Email</span>
             <input
               type="email"
@@ -72,11 +73,11 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               required
-              style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
             />
           </label>
 
-          <label style={{ display: 'grid', gap: 6 }}>
+          <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
             <span style={{ fontWeight: 700 }}>Password</span>
             <input
               type="password"
@@ -84,7 +85,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
             />
           </label>
 
@@ -102,6 +103,8 @@ export default function LoginPage() {
               color: '#fff',
               border: 0,
               borderRadius: 10,
+              width: '100%',
+              boxSizing: 'border-box',
               padding: '11px 16px',
               fontWeight: 800,
               cursor: loading ? 'wait' : 'pointer',

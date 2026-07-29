@@ -18,7 +18,7 @@
   padding: 18px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .desktopOnly {
     display: none;
   }

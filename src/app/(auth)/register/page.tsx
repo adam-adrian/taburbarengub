@@ -79,6 +79,7 @@ export default function RegisterPage() {
             borderRadius: 18,
             padding: 24,
             boxShadow: '0 10px 30px rgba(17, 24, 39, 0.06)',
+            boxSizing: 'border-box',
           }}
         >
           <div>
@@ -94,18 +95,18 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Nama</span>
               <input
                 value={form.nama}
                 onChange={updateField('nama')}
                 autoComplete="name"
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Email</span>
               <input
                 type="email"
@@ -113,11 +114,11 @@ export default function RegisterPage() {
                 onChange={updateField('email')}
                 autoComplete="email"
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Password</span>
               <input
                 type="password"
@@ -126,11 +127,11 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Konfirmasi Password</span>
               <input
                 type="password"
@@ -139,11 +140,11 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>No. HP</span>
               <input
                 value={form.no_hp}
@@ -151,11 +152,11 @@ export default function RegisterPage() {
                 inputMode="tel"
                 autoComplete="tel"
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Usia</span>
               <input
                 type="number"
@@ -163,25 +164,25 @@ export default function RegisterPage() {
                 value={form.usia}
                 onChange={updateField('usia')}
                 required
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Profesi</span>
               <input
                 value={form.profesi}
                 onChange={updateField('profesi')}
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
 
-            <label style={{ display: 'grid', gap: 6 }}>
+            <label style={{ display: 'grid', gap: 6, minWidth: 0 }}>
               <span style={{ fontWeight: 700 }}>Domisili</span>
               <input
                 value={form.domisili}
                 onChange={updateField('domisili')}
-                style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
               />
             </label>
           </div>
@@ -200,6 +201,8 @@ export default function RegisterPage() {
               color: '#fff',
               border: 0,
               borderRadius: 10,
+              width: '100%',
+              boxSizing: 'border-box',
               padding: '11px 16px',
               fontWeight: 800,
               cursor: loading ? 'wait' : 'pointer',
