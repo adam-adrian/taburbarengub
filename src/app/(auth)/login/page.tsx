@@ -38,43 +38,93 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Masuk</h1>
+    <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '64px 20px' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: 'grid',
+            gap: 18,
+            border: '1px solid #e5e7eb',
+            background: '#ffffff',
+            borderRadius: 18,
+            padding: 24,
+            boxShadow: '0 10px 30px rgba(17, 24, 39, 0.06)',
+          }}
+        >
+          <div>
+            <Link href="/" style={{ color: '#4b5563', fontSize: 14 }}>
+              ← Kembali ke landing page
+            </Link>
+            <h1 style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: -0.8, marginTop: 18 }}>
+              Masuk
+            </h1>
+            <p style={{ color: '#6b7280', lineHeight: 1.6, marginTop: 8 }}>
+              Masuk untuk booking seat dan membuka tiket QR kamu.
+            </p>
+          </div>
 
-      <label>
-        Email
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ fontWeight: 700 }}>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+              style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            />
+          </label>
 
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ fontWeight: 700 }}>Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              style={{ padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            />
+          </label>
 
-      {error && <p role="alert">{error}</p>}
+          {error && (
+            <div role="alert" style={{ padding: 14, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', borderRadius: 12 }}>
+              {error}
+            </div>
+          )}
 
-      <button type="submit" disabled={loading}>
-        {loading ? 'Memproses...' : 'Masuk'}
-      </button>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              background: loading ? '#9ca3af' : '#111827',
+              color: '#fff',
+              border: 0,
+              borderRadius: 10,
+              padding: '11px 16px',
+              fontWeight: 800,
+              cursor: loading ? 'wait' : 'pointer',
+            }}
+          >
+            {loading ? 'Memproses...' : 'Masuk'}
+          </button>
 
-      <div style={{ display: 'grid', gap: 8 }}>
-        <p>
-          <Link href="/forgot-password">Lupa password?</Link>
-        </p>
-        <p>
-          Belum punya akun? <Link href="/register">Daftar</Link>
-        </p>
+          <div style={{ display: 'grid', gap: 8, color: '#4b5563', lineHeight: 1.6 }}>
+            <p>
+              <Link href="/forgot-password" style={{ color: '#1d4ed8', fontWeight: 700 }}>
+                Lupa password?
+              </Link>
+            </p>
+            <p>
+              Belum punya akun?{' '}
+              <Link href="/register" style={{ color: '#1d4ed8', fontWeight: 700 }}>
+                Daftar
+              </Link>
+            </p>
+          </div>
+        </form>
       </div>
-    </form>
+    </main>
   )
 }
