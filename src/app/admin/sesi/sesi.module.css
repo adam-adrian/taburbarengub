@@ -1,0 +1,29 @@
+.desktopOnly {
+  display: block;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+.sessionCards {
+  display: grid;
+  gap: 14px;
+}
+
+.sessionCard {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+@media (max-width: 760px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: block;
+  }
+}

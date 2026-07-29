@@ -67,12 +67,14 @@ export default function LoginPage() {
         {loading ? 'Memproses...' : 'Masuk'}
       </button>
 
-      {/* Tanpa ini, pengunjung yang mendarat di /login dan belum punya akun
-          harus mengetik URL sendiri untuk sampai ke pendaftaran.
-          Link "Lupa password?" menyusul bersama fitur reset password. */}
-      <p>
-        Belum punya akun? <Link href="/register">Daftar</Link>
-      </p>
+      <div style={{ display: 'grid', gap: 8 }}>
+        <p>
+          <Link href="/forgot-password">Lupa password?</Link>
+        </p>
+        <p>
+          Belum punya akun? <Link href="/register">Daftar</Link>
+        </p>
+      </div>
     </form>
   )
 }

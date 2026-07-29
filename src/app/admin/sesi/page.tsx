@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import styles from './sesi.module.css'
 import { createClient } from '@/lib/supabase/server'
 
 function formatDateTime(value: string) {
@@ -102,7 +103,8 @@ export default async function AdminSesiPage() {
         )}
 
         {safeSessions.length > 0 && (
-          <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 16, background: '#fff' }}>
+          <>
+          <div className={styles.desktopOnly} style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 16, background: '#fff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
               <thead>
                 <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
@@ -171,8 +173,8 @@ export default async function AdminSesiPage() {
                       </td>
                       <td style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top' }}>
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          <Link href={`/sesi/${session.id}`} style={{ color: '#1d4ed8', fontWeight: 700 }}>
-                            Lihat
+                          <Link href={`/admin/sesi/${session.id}`} style={{ color: '#1d4ed8', fontWeight: 700 }}>
+                            Detail
                           </Link>
                           <Link href={`/admin/sesi/${session.id}/edit`} style={{ color: '#111827', fontWeight: 700 }}>
                             Edit
@@ -185,6 +187,75 @@ export default async function AdminSesiPage() {
               </tbody>
             </table>
           </div>
+
+          <div className={styles.mobileOnly}>
+            <div className={styles.sessionCards}>
+              {safeSessions.map((session) => {
+                const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
+                const currentStatusStyle = statusStyle(session.status)
+                const currentTypeStyle = typeStyle(session.tipe)
+
+                return (
+                  <article key={session.id} className={styles.sessionCard}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start', marginBottom: 12 }}>
+                      <h2 style={{ fontSize: 20, lineHeight: 1.3 }}>{session.nama_sesi}</h2>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            borderRadius: 999,
+                            padding: '4px 9px',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            textTransform: 'capitalize',
+                            background: currentTypeStyle.background,
+                            color: currentTypeStyle.color,
+                            border: `1px solid ${currentTypeStyle.border}`,
+                          }}
+                        >
+                          {session.tipe}
+                        </span>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            borderRadius: 999,
+                            padding: '4px 9px',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            textTransform: 'capitalize',
+                            background: currentStatusStyle.background,
+                            color: currentStatusStyle.color,
+                            border: `1px solid ${currentStatusStyle.border}`,
+                          }}
+                        >
+                          {session.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ color: '#4b5563', lineHeight: 1.6 }}>
+                      <p>{formatDateTime(session.tanggal_waktu)} WIB</p>
+                      {session.lokasi_atau_link && <p>{session.lokasi_atau_link}</p>}
+                    </div>
+
+                    <p style={{ color: '#374151', marginTop: 12 }}>
+                      Kuota: <strong>{session.kuota_terisi}</strong> / {session.kapasitas} · Sisa {sisaKuota}
+                    </p>
+
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
+                      <Link href={`/admin/sesi/${session.id}`} style={{ color: '#1d4ed8', fontWeight: 800 }}>
+                        Detail
+                      </Link>
+                      <Link href={`/admin/sesi/${session.id}/edit`} style={{ color: '#111827', fontWeight: 800 }}>
+                        Edit
+                      </Link>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+          </>
         )}
       </div>
     </main>

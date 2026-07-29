@@ -32,6 +32,8 @@ npx supabase migration list --linked
 - [ ] User bisa login.
 - [ ] Tombol logout berfungsi.
 - [ ] Link `/login` ↔ `/register` berfungsi.
+- [ ] `/forgot-password` mengirim pesan generik setelah submit email.
+- [ ] Link reset password mengarah ke `/reset-password` dan password baru bisa disimpan.
 
 ## 3. Admin access
 
