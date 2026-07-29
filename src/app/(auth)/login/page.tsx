@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -33,7 +33,15 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/')
+    const { data: profile } = signInData.user
+      ? await supabase
+          .from('users')
+          .select('profile_completed')
+          .eq('id', signInData.user.id)
+          .maybeSingle()
+      : { data: null }
+
+    router.push(profile?.profile_completed === false ? '/complete-profile' : '/')
     router.refresh()
   }
 

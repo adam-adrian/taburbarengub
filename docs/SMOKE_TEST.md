@@ -26,9 +26,12 @@ npx supabase migration list --linked
 
 ## 2. Auth
 
-- [ ] User baru bisa register.
+- [ ] User baru bisa register dengan email/password.
 - [ ] Row muncul di Supabase Auth.
-- [ ] Row profile muncul di `public.users`.
+- [ ] Row profile minimal muncul di `public.users` dengan `profile_completed = false`.
+- [ ] Setelah signup, user diarahkan ke `/complete-profile` jika session langsung aktif.
+- [ ] User bisa melengkapi profil di `/complete-profile`.
+- [ ] Setelah profil lengkap, `profile_completed = true`.
 - [ ] User bisa login.
 - [ ] Tombol logout berfungsi.
 - [ ] Link `/login` ↔ `/register` berfungsi.
@@ -67,7 +70,8 @@ npx supabase migration list --linked
 
 Siapkan sesi offline published dengan tanggal masa depan dan kuota tersedia.
 
-- [ ] User login bisa membuka detail sesi.
+- [ ] User login dengan profil belum lengkap tidak bisa booking dan diarahkan/diminta melengkapi profil.
+- [ ] User login dengan profil lengkap bisa membuka detail sesi.
 - [ ] User bisa klik `Booking Seat`.
 - [ ] Setelah sukses, user diarahkan ke `/tiket-saya`.
 - [ ] Tiket tampil dengan status `Booked`.

@@ -28,6 +28,7 @@ const PETA_ERROR: Record<string, { pesan: string; status: number }> = {
   TB103: { pesan: 'Kuota sesi ini sudah penuh', status: 409 },
   TB104: { pesan: 'Sesi ini sudah lewat', status: 409 },
   TB105: { pesan: 'Kamu sudah booking sesi ini sebelumnya', status: 409 },
+  TB106: { pesan: 'Lengkapi profil kamu dulu sebelum booking', status: 403 },
 }
 
 export async function createBooking(

@@ -162,33 +162,39 @@ export type Database = {
           domisili: string | null
           email: string
           id: string
-          nama: string
-          no_hp: string
+          nama: string | null
+          nama_panggilan: string | null
+          no_hp: string | null
           profesi: string | null
+          profile_completed: boolean
           role: string
-          usia: number
+          usia: number | null
         }
         Insert: {
           created_at?: string
           domisili?: string | null
           email: string
           id: string
-          nama: string
-          no_hp: string
+          nama?: string | null
+          nama_panggilan?: string | null
+          no_hp?: string | null
           profesi?: string | null
+          profile_completed?: boolean
           role?: string
-          usia: number
+          usia?: number | null
         }
         Update: {
           created_at?: string
           domisili?: string | null
           email?: string
           id?: string
-          nama?: string
-          no_hp?: string
+          nama?: string | null
+          nama_panggilan?: string | null
+          no_hp?: string | null
           profesi?: string | null
+          profile_completed?: boolean
           role?: string
-          usia?: number
+          usia?: number | null
         }
         Relationships: []
       }
@@ -209,6 +215,35 @@ export type Database = {
           tanggal_waktu: string
           user_id: string
         }[]
+      }
+      complete_user_profile: {
+        Args: {
+          p_domisili: string
+          p_nama: string
+          p_nama_panggilan: string
+          p_no_hp: string
+          p_profesi: string
+          p_usia: number
+        }
+        Returns: {
+          created_at: string
+          domisili: string | null
+          email: string
+          id: string
+          nama: string | null
+          nama_panggilan: string | null
+          no_hp: string | null
+          profesi: string | null
+          profile_completed: boolean
+          role: string
+          usia: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_booking: {
         Args: { p_session_id: string }
