@@ -15,8 +15,8 @@ export const completeProfileSchema = z.object({
     .number({ message: 'Usia harus berupa angka' })
     .int({ message: 'Usia harus berupa angka bulat' })
     .positive({ message: 'Usia harus lebih dari 0' }),
-  profesi: optionalTrimmedText,
-  domisili: optionalTrimmedText,
+  profesi: z.string().trim().min(1, { message: 'Profesi wajib diisi' }),
+  domisili: z.string().trim().min(1, { message: 'Domisili wajib diisi' }),
 })
 
 export type CompleteProfileInput = z.infer<typeof completeProfileSchema>

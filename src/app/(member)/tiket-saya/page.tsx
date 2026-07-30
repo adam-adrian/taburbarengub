@@ -68,6 +68,12 @@ export default async function TiketSayaPage() {
     redirect('/login')
   }
 
+  const { data: profile } = await supabase
+    .from('users')
+    .select('profile_completed')
+    .eq('id', user.id)
+    .maybeSingle()
+
   const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
     .select('id, session_id, status, created_at, checked_in_at')
@@ -119,7 +125,38 @@ export default async function TiketSayaPage() {
           </div>
         )}
 
-        {!bookingsError && safeBookings.length === 0 && (
+        {!bookingsError && !profile?.profile_completed && (
+          <div
+            style={{
+              marginTop: 24,
+              border: '1px dashed #bfdbfe',
+              background: '#eff6ff',
+              color: '#1e3a8a',
+              padding: 24,
+              borderRadius: 14,
+            }}
+          >
+            <h2 style={{ fontSize: 20, marginBottom: 8 }}>Profil belum lengkap</h2>
+            <p style={{ lineHeight: 1.6, marginBottom: 16 }}>
+              Lengkapi profil peserta terlebih dahulu sebelum melakukan booking dan mendapatkan tiket QR.
+            </p>
+            <Link
+              href="/complete-profile"
+              style={{
+                display: 'inline-block',
+                background: '#111827',
+                color: '#fff',
+                padding: '10px 14px',
+                borderRadius: 10,
+                fontWeight: 700,
+              }}
+            >
+              Lengkapi Profil
+            </Link>
+          </div>
+        )}
+
+        {!bookingsError && profile?.profile_completed && safeBookings.length === 0 && (
           <div
             style={{
               marginTop: 24,
@@ -149,6 +186,7 @@ export default async function TiketSayaPage() {
           </div>
         )}
 
+        {profile?.profile_completed && (
         <div style={{ display: 'grid', gap: 18, marginTop: 24 }}>
           {safeBookings.map((booking) => {
             const session = sessionById.get(booking.session_id)
@@ -231,6 +269,7 @@ export default async function TiketSayaPage() {
             )
           })}
         </div>
+        )}
       </div>
     </main>
   )

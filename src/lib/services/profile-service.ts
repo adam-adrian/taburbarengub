@@ -16,6 +16,8 @@ const PETA_ERROR: Record<string, { pesan: string; status: number }> = {
   TB402: { pesan: 'No. HP wajib diisi', status: 400 },
   TB403: { pesan: 'Usia wajib diisi dan harus lebih dari 0', status: 400 },
   TB404: { pesan: 'Profile tidak ditemukan', status: 404 },
+  TB405: { pesan: 'Profesi wajib diisi', status: 400 },
+  TB406: { pesan: 'Domisili wajib diisi', status: 400 },
 }
 
 export async function completeUserProfile(

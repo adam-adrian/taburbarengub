@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ProfileCompletionPrompt } from './complete-profile/profile-completion-prompt'
 import { createClient } from '@/lib/supabase/server'
 
 function formatDateTime(value: string) {
@@ -103,7 +104,11 @@ export default async function Home() {
       .order('tanggal_waktu', { ascending: false })
       .limit(6),
     user
-      ? supabase.from('users').select('role').eq('id', user.id).maybeSingle()
+      ? supabase
+          .from('users')
+          .select('id, email, role, created_at, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
+          .eq('id', user.id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     user
       ? supabase
@@ -494,6 +499,10 @@ export default async function Home() {
           </p>
         </div>
       </footer>
+
+      {user && !profile?.profile_completed && (
+        <ProfileCompletionPrompt profile={profile ?? null} />
+      )}
     </main>
   )
 }

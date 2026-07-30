@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
 import { BookingButton } from './booking-button'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -34,14 +35,21 @@ export default async function SessionDetailPage({
     notFound()
   }
 
-  const { data: existingBooking } = user
-    ? await supabase
-        .from('bookings')
-        .select('id, status')
-        .eq('user_id', user.id)
-        .eq('session_id', session.id)
-        .maybeSingle()
-    : { data: null }
+  const [{ data: existingBooking }, { data: profile }] = user
+    ? await Promise.all([
+        supabase
+          .from('bookings')
+          .select('id, status')
+          .eq('user_id', user.id)
+          .eq('session_id', session.id)
+          .maybeSingle(),
+        supabase
+          .from('users')
+          .select('id, email, role, created_at, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
+          .eq('id', user.id)
+          .maybeSingle(),
+      ])
+    : [{ data: null }, { data: null }]
 
   const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
   const isOffline = session.tipe === 'offline'
@@ -137,7 +145,7 @@ export default async function SessionDetailPage({
               </button>
             ) : existingBooking ? (
               <Link
-                href="/tiket-saya"
+                href={`/tiket-saya/${existingBooking.id}`}
                 style={{
                   background: '#ecfdf5',
                   color: '#047857',
@@ -149,6 +157,13 @@ export default async function SessionDetailPage({
               >
                 Kamu sudah booking — lihat tiket
               </Link>
+            ) : user && !profile?.profile_completed ? (
+              <ProfileCompletionPrompt
+                profile={profile ?? null}
+                autoOpen={false}
+                showDismissedBanner={false}
+                triggerLabel="Lengkapi Profil untuk Booking"
+              />
             ) : user ? (
               <BookingButton sessionId={session.id} />
             ) : (

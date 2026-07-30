@@ -44,7 +44,9 @@ export default function RegisterPage() {
       return
     }
 
-    router.push('/complete-profile')
+    window.sessionStorage.setItem('taburbarengub.profileOnboardingMode', 'welcome')
+    window.sessionStorage.removeItem('taburbarengub.profilePromptDismissed')
+    router.push('/')
     router.refresh()
   }
 
@@ -68,14 +70,11 @@ export default function RegisterPage() {
             <Link href="/" style={{ color: '#4b5563', fontSize: 14 }}>
               ← Kembali ke landing page
             </Link>
-            <p style={{ color: '#6b7280', fontWeight: 700, marginTop: 18, marginBottom: 8 }}>
-              Mulai dengan kredensial akun
-            </p>
-            <h1 style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: -0.8 }}>
+            <h1 style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: -0.8, marginTop: 18 }}>
               Buat Akun
             </h1>
             <p style={{ color: '#6b7280', lineHeight: 1.6, marginTop: 8 }}>
-              Masukkan email dan password. Setelah akun berhasil dibuat, kamu akan melengkapi profil peserta sebelum booking sesi.
+              Masukkan email dan password. Setelah akun berhasil dibuat, kamu akan masuk ke halaman utama dan melengkapi profil peserta sebelum booking sesi.
             </p>
           </div>
 

@@ -26,7 +26,17 @@ function createInitialState(profile: UserProfile | null): ProfileFormState {
   }
 }
 
-export function CompleteProfileForm({ profile }: { profile: UserProfile | null }) {
+export function CompleteProfileForm({
+  profile,
+  submitLabel = 'Simpan & Lihat Sesi',
+  redirectTo = '/#sesi',
+  onSuccess,
+}: {
+  profile: UserProfile | null
+  submitLabel?: string
+  redirectTo?: string
+  onSuccess?: () => void
+}) {
   const router = useRouter()
   const [form, setForm] = useState<ProfileFormState>(() => createInitialState(profile))
   const [loading, setLoading] = useState(false)
@@ -90,7 +100,11 @@ export function CompleteProfileForm({ profile }: { profile: UserProfile | null }
         return
       }
 
-      router.push('/#sesi')
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push(redirectTo)
+      }
       router.refresh()
     } catch {
       setError('Tidak bisa terhubung ke server, coba lagi')
@@ -186,7 +200,7 @@ export function CompleteProfileForm({ profile }: { profile: UserProfile | null }
           cursor: loading ? 'wait' : 'pointer',
         }}
       >
-        {loading ? 'Menyimpan...' : 'Simpan & Lihat Sesi'}
+        {loading ? 'Menyimpan...' : submitLabel}
       </button>
     </form>
   )
