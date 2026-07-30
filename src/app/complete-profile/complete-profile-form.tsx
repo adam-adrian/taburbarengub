@@ -2,29 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import type { Database } from '@/lib/types/database.types'
-
-type UserProfile = Database['public']['Tables']['users']['Row']
-
-type ProfileFormState = {
-  nama: string
-  nama_panggilan: string
-  no_hp: string
-  usia: string
-  profesi: string
-  domisili: string
-}
-
-function createInitialState(profile: UserProfile | null): ProfileFormState {
-  return {
-    nama: profile?.nama ?? '',
-    nama_panggilan: profile?.nama_panggilan ?? '',
-    no_hp: profile?.no_hp ?? '',
-    usia: profile?.usia ? String(profile.usia) : '',
-    profesi: profile?.profesi ?? '',
-    domisili: profile?.domisili ?? '',
-  }
-}
+import {
+  createInitialState,
+  errorBoxStyle,
+  inputStyle,
+  primaryButtonStyle,
+  submitProfile,
+  type ProfileFormState,
+  type UserProfile,
+} from './profile-form-shared'
 
 export function CompleteProfileForm({
   profile,
@@ -71,46 +57,21 @@ export function CompleteProfileForm({
 
     setLoading(true)
 
-    try {
-      const response = await fetch('/api/me/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nama: form.nama,
-          nama_panggilan: form.nama_panggilan,
-          no_hp: form.no_hp,
-          usia,
-          profesi: form.profesi,
-          domisili: form.domisili,
-        }),
-      })
+    const result = await submitProfile(form)
 
-      const result = (await response.json().catch(() => null)) as
-        | { error?: unknown }
-        | null
-
-      if (!response.ok) {
-        const message =
-          typeof result?.error === 'string'
-            ? result.error
-            : 'Gagal menyimpan profil, coba lagi'
-        setError(message)
-        return
-      }
-
-      if (onSuccess) {
-        onSuccess()
-      } else {
-        router.push(redirectTo)
-      }
-      router.refresh()
-    } catch {
-      setError('Tidak bisa terhubung ke server, coba lagi')
-    } finally {
+    if (!result.ok) {
+      setError(result.error)
       setLoading(false)
+      return
     }
+
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      router.push(redirectTo)
+    }
+    router.refresh()
+    setLoading(false)
   }
 
   return (
@@ -123,7 +84,7 @@ export function CompleteProfileForm({
             onChange={updateField('nama')}
             autoComplete="name"
             required
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
 
@@ -132,7 +93,7 @@ export function CompleteProfileForm({
           <input
             value={form.nama_panggilan}
             onChange={updateField('nama_panggilan')}
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
 
@@ -144,7 +105,7 @@ export function CompleteProfileForm({
             inputMode="tel"
             autoComplete="tel"
             required
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
 
@@ -156,7 +117,7 @@ export function CompleteProfileForm({
             value={form.usia}
             onChange={updateField('usia')}
             required
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
 
@@ -165,7 +126,7 @@ export function CompleteProfileForm({
           <input
             value={form.profesi}
             onChange={updateField('profesi')}
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
 
@@ -174,13 +135,13 @@ export function CompleteProfileForm({
           <input
             value={form.domisili}
             onChange={updateField('domisili')}
-            style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+            style={inputStyle}
           />
         </label>
       </div>
 
       {error && (
-        <div role="alert" style={{ padding: 14, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', borderRadius: 12 }}>
+        <div role="alert" style={errorBoxStyle}>
           {error}
         </div>
       )}
@@ -188,17 +149,7 @@ export function CompleteProfileForm({
       <button
         type="submit"
         disabled={loading}
-        style={{
-          background: loading ? '#9ca3af' : '#111827',
-          color: '#fff',
-          border: 0,
-          borderRadius: 10,
-          width: '100%',
-          boxSizing: 'border-box',
-          padding: '11px 16px',
-          fontWeight: 800,
-          cursor: loading ? 'wait' : 'pointer',
-        }}
+        style={{ ...primaryButtonStyle(loading), width: '100%', boxSizing: 'border-box' }}
       >
         {loading ? 'Menyimpan...' : submitLabel}
       </button>

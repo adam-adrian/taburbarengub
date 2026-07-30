@@ -1,36 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import type { Database } from '@/lib/types/database.types'
-
-type UserProfile = Database['public']['Tables']['users']['Row']
+import { useEffect, useRef, useState } from 'react'
+import {
+  createInitialState,
+  errorBoxStyle,
+  inputStyle,
+  primaryButtonStyle,
+  submitProfile,
+  type ProfileFormState,
+  type UserProfile,
+} from './profile-form-shared'
 
 type PromptMode = 'welcome' | 'reminder'
 type WizardStep = 'welcome' | 'identity' | 'extra'
 
-type ProfileFormState = {
-  nama: string
-  nama_panggilan: string
-  no_hp: string
-  usia: string
-  profesi: string
-  domisili: string
-}
-
 const ONBOARDING_MODE_KEY = 'taburbarengub.profileOnboardingMode'
 const PROMPT_DISMISSED_KEY = 'taburbarengub.profilePromptDismissed'
 const ONBOARDING_DELAY_MS = 450
-
-function createInitialState(profile: UserProfile | null): ProfileFormState {
-  return {
-    nama: profile?.nama ?? '',
-    nama_panggilan: profile?.nama_panggilan ?? '',
-    no_hp: profile?.no_hp ?? '',
-    usia: profile?.usia ? String(profile.usia) : '',
-    profesi: profile?.profesi ?? '',
-    domisili: profile?.domisili ?? '',
-  }
-}
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
 
 function ProgressDots({ step }: { step: WizardStep }) {
   const activeIndex = step === 'welcome' ? 0 : step === 'identity' ? 1 : 2
@@ -71,6 +59,8 @@ export function ProfileCompletionPrompt({
   const [form, setForm] = useState<ProfileFormState>(() => createInitialState(profile))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (profile?.profile_completed) return
@@ -102,6 +92,49 @@ export function ProfileCompletionPrompt({
       window.clearTimeout(timer)
     }
   }, [autoOpen, profile?.profile_completed])
+
+  useEffect(() => {
+    if (!open) return
+
+    triggerRef.current = document.activeElement as HTMLElement | null
+
+    const dialog = dialogRef.current
+    const focusables = dialog?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+    focusables?.[0]?.focus()
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closePrompt()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialog) return
+
+      const items = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      if (items.length === 0) return
+
+      const first = items[0]
+      const last = items[items.length - 1]
+      const activeEl = document.activeElement
+
+      if (event.shiftKey && activeEl === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && activeEl === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      triggerRef.current?.focus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step])
 
   if (profile?.profile_completed) {
     return null
@@ -152,7 +185,7 @@ export function ProfileCompletionPrompt({
     setStep('extra')
   }
 
-  async function submitProfile() {
+  async function handleSubmit() {
     setError(null)
 
     const usia = Number(form.usia)
@@ -174,41 +207,16 @@ export function ProfileCompletionPrompt({
 
     setLoading(true)
 
-    try {
-      const response = await fetch('/api/me/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nama: form.nama,
-          nama_panggilan: form.nama_panggilan,
-          no_hp: form.no_hp,
-          usia,
-          profesi: form.profesi,
-          domisili: form.domisili,
-        }),
-      })
+    const result = await submitProfile(form)
 
-      const result = (await response.json().catch(() => null)) as
-        | { error?: unknown }
-        | null
-
-      if (!response.ok) {
-        const message =
-          typeof result?.error === 'string'
-            ? result.error
-            : 'Gagal menyimpan profil, coba lagi'
-        setError(message)
-        return
-      }
-
-      handleProfileCompleted()
-    } catch {
-      setError('Tidak bisa terhubung ke server, coba lagi')
-    } finally {
+    if (!result.ok) {
+      setError(result.error)
       setLoading(false)
+      return
     }
+
+    handleProfileCompleted()
+    setLoading(false)
   }
 
   return (
@@ -233,6 +241,7 @@ export function ProfileCompletionPrompt({
 
       {open && (
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-onboarding-title"
@@ -350,7 +359,7 @@ export function ProfileCompletionPrompt({
                     onChange={updateField('nama')}
                     autoComplete="name"
                     required
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
@@ -359,7 +368,7 @@ export function ProfileCompletionPrompt({
                   <input
                     value={form.nama_panggilan}
                     onChange={updateField('nama_panggilan')}
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
@@ -371,12 +380,12 @@ export function ProfileCompletionPrompt({
                     inputMode="tel"
                     autoComplete="tel"
                     required
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
                 {error && (
-                  <div role="alert" style={{ padding: 14, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', borderRadius: 12 }}>
+                  <div role="alert" style={errorBoxStyle}>
                     {error}
                   </div>
                 )}
@@ -411,7 +420,7 @@ export function ProfileCompletionPrompt({
                     value={form.usia}
                     onChange={updateField('usia')}
                     required
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
@@ -421,7 +430,7 @@ export function ProfileCompletionPrompt({
                     value={form.profesi}
                     onChange={updateField('profesi')}
                     required
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
@@ -431,12 +440,12 @@ export function ProfileCompletionPrompt({
                     value={form.domisili}
                     onChange={updateField('domisili')}
                     required
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 11, borderRadius: 10, border: '1px solid #d1d5db' }}
+                    style={inputStyle}
                   />
                 </label>
 
                 {error && (
-                  <div role="alert" style={{ padding: 14, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', borderRadius: 12 }}>
+                  <div role="alert" style={errorBoxStyle}>
                     {error}
                   </div>
                 )}
@@ -445,7 +454,7 @@ export function ProfileCompletionPrompt({
                   <button type="button" onClick={() => setStep('identity')} disabled={loading} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
                     Kembali
                   </button>
-                  <button type="button" onClick={submitProfile} disabled={loading} style={{ background: loading ? '#9ca3af' : '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
+                  <button type="button" onClick={handleSubmit} disabled={loading} style={primaryButtonStyle(loading)}>
                     {loading ? 'Menyimpan...' : 'Simpan Profil'}
                   </button>
                 </div>
