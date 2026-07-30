@@ -58,3 +58,5 @@ supabase/.temp/
 
 # TypeScript incremental
 *.tsbuildinfo
+graphify-out/cache/
+graphify-out/.graphify_*
