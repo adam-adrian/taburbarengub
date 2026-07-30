@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   createInitialState,
   errorBoxStyle,
@@ -61,6 +61,8 @@ export function ProfileCompletionPrompt({
   const [error, setError] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const [minBodyHeight, setMinBodyHeight] = useState(0)
 
   useEffect(() => {
     if (profile?.profile_completed) return
@@ -99,8 +101,7 @@ export function ProfileCompletionPrompt({
     triggerRef.current = document.activeElement as HTMLElement | null
 
     const dialog = dialogRef.current
-    const focusables = dialog?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-    focusables?.[0]?.focus()
+    dialog?.focus()
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -118,7 +119,7 @@ export function ProfileCompletionPrompt({
       const last = items[items.length - 1]
       const activeEl = document.activeElement
 
-      if (event.shiftKey && activeEl === first) {
+      if (event.shiftKey && (activeEl === first || activeEl === dialog)) {
         event.preventDefault()
         last.focus()
       } else if (!event.shiftKey && activeEl === last) {
@@ -133,7 +134,46 @@ export function ProfileCompletionPrompt({
       document.removeEventListener('keydown', onKeyDown)
       triggerRef.current?.focus()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  }, [open, step])
+
+  useEffect(() => {
+    if (!open) return
+
+    const scrollY = window.scrollY
+    const body = document.body
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    }
+
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    body.style.overflow = 'hidden'
+
+    return () => {
+      body.style.position = previous.position
+      body.style.top = previous.top
+      body.style.left = previous.left
+      body.style.right = previous.right
+      body.style.width = previous.width
+      body.style.overflow = previous.overflow
+      window.scrollTo(0, scrollY)
+    }
+  }, [open])
+
+  useLayoutEffect(() => {
+    if (!open) return
+
+    const measured = bodyRef.current?.scrollHeight ?? 0
+    setMinBodyHeight((prev) => (measured > prev ? measured : prev))
   }, [open, step])
 
   if (profile?.profile_completed) {
@@ -155,12 +195,14 @@ export function ProfileCompletionPrompt({
     window.sessionStorage.setItem(PROMPT_DISMISSED_KEY, 'true')
     setOpen(false)
     setDismissed(true)
+    setMinBodyHeight(0)
   }
 
   function handleProfileCompleted() {
     window.sessionStorage.removeItem(PROMPT_DISMISSED_KEY)
     setOpen(false)
     setDismissed(false)
+    setMinBodyHeight(0)
     document.getElementById('sesi')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -191,7 +233,7 @@ export function ProfileCompletionPrompt({
     const usia = Number(form.usia)
 
     if (!Number.isInteger(usia) || usia <= 0) {
-      setError('Usia harus berupa angka lebih dari 0')
+      setError('Usia wajib diisi')
       return
     }
 
@@ -245,6 +287,7 @@ export function ProfileCompletionPrompt({
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-onboarding-title"
+          tabIndex={-1}
           style={{
             position: 'fixed',
             inset: 0,
@@ -254,6 +297,7 @@ export function ProfileCompletionPrompt({
             placeItems: 'center',
             padding: 16,
             overflowY: 'auto',
+            outline: 'none',
           }}
         >
           <section
@@ -261,16 +305,18 @@ export function ProfileCompletionPrompt({
               width: '100%',
               maxWidth: 560,
               maxHeight: '92vh',
-              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
               border: '1px solid #e5e7eb',
               background: '#ffffff',
+              color: '#111827',
               borderRadius: 22,
-              padding: 24,
               boxShadow: '0 24px 80px rgba(17, 24, 39, 0.28)',
               boxSizing: 'border-box',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+            <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '24px 24px 12px' }}>
               <ProgressDots step={step} />
               <button
                 type="button"
@@ -291,6 +337,14 @@ export function ProfileCompletionPrompt({
               </button>
             </div>
 
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '0 24px 24px',
+              }}
+            >
+            <div ref={bodyRef} style={{ minHeight: minBodyHeight || undefined }}>
             {step === 'welcome' && (
               <div style={{ display: 'grid', gap: 18, textAlign: 'center' }}>
                 <div aria-hidden="true" style={{ fontSize: 44 }}>
@@ -322,22 +376,6 @@ export function ProfileCompletionPrompt({
                   </ul>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={closePrompt}
-                    style={{ background: 'transparent', color: '#4b5563', border: 0, padding: '11px 0', fontWeight: 800, cursor: 'pointer' }}
-                  >
-                    Nanti dulu
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goToIdentity}
-                    style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}
-                  >
-                    Mulai
-                  </button>
-                </div>
               </div>
             )}
 
@@ -390,14 +428,6 @@ export function ProfileCompletionPrompt({
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <button type="button" onClick={() => setStep('welcome')} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
-                    Kembali
-                  </button>
-                  <button type="button" onClick={goToExtra} style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
-                    Lanjut
-                  </button>
-                </div>
               </div>
             )}
 
@@ -449,18 +479,45 @@ export function ProfileCompletionPrompt({
                     {error}
                   </div>
                 )}
+              </div>
+            )}
+            </div>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <button type="button" onClick={() => setStep('identity')} disabled={loading} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
+            <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 12, borderTop: '1px solid #e5e7eb', padding: '16px 24px' }}>
+              {step === 'welcome' && (
+                <>
+                  <button type="button" onClick={closePrompt} style={{ background: 'transparent', color: '#6b7280', border: 0, borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
+                    Nanti dulu
+                  </button>
+                  <button type="button" onClick={goToIdentity} style={primaryButtonStyle(false)}>
+                    Mulai
+                  </button>
+                </>
+              )}
+
+              {step === 'identity' && (
+                <>
+                  <button type="button" onClick={() => { setError(null); setStep('welcome') }} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
+                    Kembali
+                  </button>
+                  <button type="button" onClick={goToExtra} style={primaryButtonStyle(false)}>
+                    Lanjut
+                  </button>
+                </>
+              )}
+
+              {step === 'extra' && (
+                <>
+                  <button type="button" onClick={() => { setError(null); setStep('identity') }} disabled={loading} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
                     Kembali
                   </button>
                   <button type="button" onClick={handleSubmit} disabled={loading} style={primaryButtonStyle(loading)}>
                     {loading ? 'Menyimpan...' : 'Simpan Profil'}
                   </button>
-                </div>
-              </div>
-            )}
-
+                </>
+              )}
+            </div>
           </section>
         </div>
       )}

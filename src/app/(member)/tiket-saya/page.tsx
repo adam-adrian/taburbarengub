@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
 
 type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
 
@@ -70,7 +71,7 @@ export default async function TiketSayaPage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('profile_completed')
+    .select('id, email, role, created_at, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -140,19 +141,12 @@ export default async function TiketSayaPage() {
             <p style={{ lineHeight: 1.6, marginBottom: 16 }}>
               Lengkapi profil peserta terlebih dahulu sebelum melakukan booking dan mendapatkan tiket QR.
             </p>
-            <Link
-              href="/complete-profile"
-              style={{
-                display: 'inline-block',
-                background: '#111827',
-                color: '#fff',
-                padding: '10px 14px',
-                borderRadius: 10,
-                fontWeight: 700,
-              }}
-            >
-              Lengkapi Profil
-            </Link>
+            <ProfileCompletionPrompt
+              profile={profile ?? null}
+              autoOpen={false}
+              showDismissedBanner={false}
+              triggerLabel="Lengkapi Profil"
+            />
           </div>
         )}
 
