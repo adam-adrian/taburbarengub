@@ -1,36 +1,154 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TaburBarengUB
 
-## Getting Started
+Platform event TaburBarengUB Fase 1: landing page event, autentikasi, booking seat sesi offline, tiket QR, check-in QR, dan dashboard admin dasar.
 
-First, run the development server:
+## Requirements
+
+- Node.js 22.x
+- npm
+- Supabase project yang sudah menjalankan migration di `supabase/migrations`
+
+Versi Node dipin melalui:
+
+```bash
+.nvmrc
+```
+
+Jika memakai `nvm`:
+
+```bash
+nvm use
+```
+
+## Environment
+
+Salin template env:
+
+```bash
+cp .env.example .env.local
+```
+
+Isi:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Jangan pernah menaruh `sb_secret_*` atau service-role key di variable `NEXT_PUBLIC_*`.
+
+## Install
+
+```bash
+npm ci
+```
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Quality checks
 
-## Learn More
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+CI menjalankan tiga command tersebut pada Node 22.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase workflow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Migration ada di:
 
-## Deploy on Vercel
+```text
+supabase/migrations/
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Push migration ke project linked:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run db:push
+```
+
+Generate TypeScript types dari Supabase linked project:
+
+```bash
+npm run db:types:linked
+```
+
+Untuk local Supabase jika dipakai:
+
+```bash
+npx supabase start
+npm run db:types
+```
+
+Catatan: beberapa workflow lokal Supabase membutuhkan Docker.
+
+## Main routes
+
+Public/auth:
+
+```text
+/
+/login
+/register
+/forgot-password
+/reset-password
+/sesi/[id]
+```
+
+Member:
+
+```text
+/tiket-saya
+/tiket-saya/[id]
+```
+
+Admin:
+
+```text
+/admin
+/admin/hero
+/admin/sesi
+/admin/sesi/[id]
+/admin/sesi/new
+/admin/sesi/[id]/edit
+/admin/peserta
+/admin/scanner
+```
+
+API:
+
+```text
+POST /api/bookings
+POST /api/check-in
+PATCH /api/me/profile
+POST /api/admin/sessions
+PATCH /api/admin/sessions/[id]
+PATCH /api/admin/hero
+GET /admin/peserta/export.csv?session_id=...
+```
+
+## Documentation
+
+- `docs/ARCHITECTURE.md` — keputusan arsitektur dan pola layering.
+- `docs/SMOKE_TEST.md` — checklist smoke test manual.
+- `docs/REVIEW_ACTION_TRACKER.md` — tracker action item hasil review.
+- `AUDIT_HANDOFF.md` — konteks audit/handoff sebelumnya.
+
+## Deployment notes
+
+- Pastikan runtime deployment memakai Node 22.
+- Set env production di platform deploy.
+- Pastikan Supabase Auth redirect URL mengarah ke domain deploy.
+- Jalankan smoke test setelah deploy dan migration.
