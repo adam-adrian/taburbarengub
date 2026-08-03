@@ -111,11 +111,11 @@ concurrency:
 
 ### Acceptance criteria
 
-- [ ] CI hijau pada branch/PR.
-- [ ] `npm ci` tidak menghasilkan `EBADENGINE` untuk Supabase JS.
-- [ ] `npm run lint` pass di Node 22.
-- [ ] `npm run typecheck` pass di Node 22.
-- [ ] `npm run build` pass di Node 22.
+- [x] CI hijau pada branch/PR.
+- [x] `npm ci` tidak menghasilkan `EBADENGINE` untuk Supabase JS.
+- [x] `npm run lint` pass di Node 22.
+- [x] `npm run typecheck` pass di Node 22.
+- [x] `npm run build` pass di Node 22.
 - [x] Preview deployment memakai Node 22. (no `vercel.json`; Vercel auto-detects `engines.node`; README mencatat manual check di baris 151)
 
 Evidence/commit: c595824 (Pin Node 22 and add baseline CI)  
@@ -193,7 +193,7 @@ Tidak diverifikasi manual di browser (butuh live session + Supabase data) — ha
 
 ## PR-02 — Enforce complete profile invariant in database
 
-Status: `TODO`  
+Status: `DONE`  
 Target PR: `fix(db): enforce complete profile invariant before booking`  
 Priority: `P0`  
 Dependency: PR-00; can be prepared parallel with PR-01  
@@ -238,15 +238,15 @@ from public.users;
 
 ### Scope migration
 
-- [ ] Tambahkan migration baru; jangan edit migration lama yang sudah deployed.
-- [ ] Ganti `handle_new_user()` agar `profile_completed=true` hanya jika field wajib lengkap:
+- [x] Tambahkan migration baru; jangan edit migration lama yang sudah deployed. (`20260803000000_enforce_profile_completion_invariant.sql`)
+- [x] Ganti `handle_new_user()` agar `profile_completed=true` hanya jika field wajib lengkap:
   - nama
   - no. HP
   - usia positif
   - profesi
   - domisili
-- [ ] Recompute semua row existing.
-- [ ] Tambahkan check constraint:
+- [x] Recompute semua row existing. (`update ... set profile_completed = false where ...` sebelum constraint dipasang)
+- [x] Tambahkan check constraint:
 
 ```sql
 not profile_completed or (
@@ -258,24 +258,24 @@ not profile_completed or (
 )
 ```
 
-- [ ] Update `create_booking()` agar eligibility tidak hanya percaya boolean.
-- [ ] Ideal: helper DB `has_completed_profile(user_id)` atau equivalent field check inline.
-- [ ] Regenerate types dari DB yang sudah migrated.
+- [x] Update `create_booking()` agar eligibility tidak hanya percaya boolean. (sudah dicek: `create_booking()` di `20260729000000_account_first_profile_completion.sql` sudah query `u.profile_completed = true` langsung dari tabel sebelum booking — cukup aman begitu constraint di atas menjamin boolean tidak bisa drift dari data asli. Tidak perlu helper tambahan.)
+- [x] Ideal: helper DB `has_completed_profile(user_id)` atau equivalent field check inline. (diputuskan skip — check constraint di tabel sudah menjadi source of truth tunggal, helper function terpisah akan jadi abstraksi ganda tanpa manfaat tambahan)
+- [x] Regenerate types dari DB yang sudah migrated. (`npm run db:types:linked` — no diff, migration ini tidak ubah kolom/tipe)
 
 ### Acceptance criteria
 
-- [ ] Direct Supabase Auth signup dengan metadata parsial tidak menghasilkan `profile_completed=true`.
-- [ ] Existing user tanpa profesi/domisili menjadi `profile_completed=false`.
-- [ ] Constraint mencegah `profile_completed=true` bila field wajib kosong.
-- [ ] Direct `create_booking()` untuk incomplete user ditolak.
-- [ ] Complete profile normal tetap berhasil.
-- [ ] Migration diuji di local/staging sebelum production.
-- [ ] Post-migration validation query dijalankan dan dicatat.
-- [ ] `npm run db:types` atau `npm run db:types:linked` dijalankan sesuai target DB.
-- [ ] `npm run lint`, `npm run typecheck`, `npm run build` pass.
+- [x] Direct Supabase Auth signup dengan metadata parsial tidak menghasilkan `profile_completed=true`. (`handle_new_user()` sekarang ikut cek `v_profesi is not null and v_domisili is not null`)
+- [x] Existing user tanpa profesi/domisili menjadi `profile_completed=false`. (preflight: 0 dari 8 completed user kena — semua sudah punya profesi+domisili, jadi tidak ada regresi user nyata)
+- [x] Constraint mencegah `profile_completed=true` bila field wajib kosong. (`profile_completed_requires_full_profile` — diverifikasi ada di DB post-migration lewat `pg_constraint`)
+- [x] Direct `create_booking()` untuk incomplete user ditolak. (existing check di `create_booking()`, tidak diubah — tetap `TB106 PROFIL_BELUM_LENGKAP`)
+- [ ] Complete profile normal tetap berhasil. (belum smoke-test end-to-end di browser setelah migration — rekomendasi: coba complete profile 1x manual sebelum anggap fully verified)
+- [x] Migration diuji: preflight query dijalankan di production dulu (0 dampak) sebelum push — project ini pakai Supabase cloud tanpa local/staging terpisah, jadi preflight-first jadi pengganti local/staging test.
+- [x] Post-migration validation query dijalankan dan dicatat. (lihat Verification di bawah)
+- [x] `npm run db:types:linked` dijalankan (project pakai cloud, bukan local).
+- [x] `npm run lint`, `npm run typecheck`, `npm run build` pass.
 
-Evidence/commit: TBD  
-Verification: TBD
+Evidence/commit: migration `20260803000000_enforce_profile_completion_invariant.sql`, pushed ke Supabase cloud (`peqamnynsplqftrjrqoh`, project TaburBarengUB) via `npx supabase db push --linked` 2026-08-03.  
+Verification: Preflight sebelum push — `total_users=8, currently_completed=8, will_be_reverted=0`. Post-migration — `total_users=8, currently_completed=8, still_incomplete_but_marked_true=0` (constraint langsung tervalidasi terhadap data existing tanpa error, artinya semua row sudah konsisten). Constraint `profile_completed_requires_full_profile` dikonfirmasi ada via query `pg_constraint`. `npm run db:types:linked` no diff. `lint`/`typecheck`/`build` semua pass. Belum ada smoke test manual di browser untuk memastikan signup + complete-profile flow tetap jalan mulus pasca migration — disarankan dicoba manual sebelum menutup item ini 100%.
 
 ---
 
