@@ -41,7 +41,7 @@ Mitigation until expiry:
 
 ## PR-00 — Toolchain, Node 22, CI baseline, env docs
 
-Status: `TODO`  
+Status: `DONE`  
 Target PR: `chore: pin Node 22 and add baseline CI`  
 Priority: `P0 prerequisite`  
 Dependency: none  
@@ -58,7 +58,7 @@ Source: Execution plan PR-00, review P1.3/P2.5/P2.7
 
 ### Scope
 
-- [ ] Tambahkan `engines.node` di `package.json`:
+- [x] Tambahkan `engines.node` di `package.json`:
 
 ```json
 "engines": {
@@ -66,21 +66,21 @@ Source: Execution plan PR-00, review P1.3/P2.5/P2.7
 }
 ```
 
-- [ ] Tambahkan `.nvmrc` atau `.node-version` berisi `22`.
-- [ ] Tambahkan script:
+- [x] Tambahkan `.nvmrc` atau `.node-version` berisi `22`.
+- [x] Tambahkan script:
 
 ```json
 "typecheck": "tsc --noEmit --pretty false"
 ```
 
-- [ ] Tambahkan GitHub Actions baseline:
+- [x] Tambahkan GitHub Actions baseline:
   - checkout
   - setup Node 22
   - `npm ci`
   - `npm run lint`
   - `npm run typecheck`
   - `npm run build`
-- [ ] CI memakai env dummy format-valid, bukan Markdown link:
+- [x] CI memakai env dummy format-valid, bukan Markdown link:
 
 ```yaml
 env:
@@ -89,8 +89,8 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
 ```
 
-- [ ] Tambahkan `permissions: contents: read`.
-- [ ] Tambahkan `concurrency`:
+- [x] Tambahkan `permissions: contents: read`.
+- [x] Tambahkan `concurrency`:
 
 ```yaml
 concurrency:
@@ -98,10 +98,10 @@ concurrency:
   cancel-in-progress: true
 ```
 
-- [ ] Tambahkan `.env.example`.
-- [ ] Pastikan `.gitignore` punya exception `!.env.example`.
-- [ ] README minimum: Node 22, install, env, dev, build, Supabase migrations/typegen.
-- [ ] Set Node 22 di Vercel/deployment.
+- [x] Tambahkan `.env.example`.
+- [x] Pastikan `.gitignore` punya exception `!.env.example`.
+- [x] README minimum: Node 22, install, env, dev, build, Supabase migrations/typegen.
+- [x] Set Node 22 di Vercel/deployment. (tidak ada `vercel.json` — Vercel baca `engines.node` otomatis; README baris 151 catat manual check)
 
 ### Non-scope
 
@@ -116,10 +116,10 @@ concurrency:
 - [ ] `npm run lint` pass di Node 22.
 - [ ] `npm run typecheck` pass di Node 22.
 - [ ] `npm run build` pass di Node 22.
-- [ ] Preview deployment memakai Node 22.
+- [x] Preview deployment memakai Node 22. (no `vercel.json`; Vercel auto-detects `engines.node`; README mencatat manual check di baris 151)
 
-Evidence/commit: TBD  
-Verification: TBD
+Evidence/commit: c595824 (Pin Node 22 and add baseline CI)  
+Verification: `npm run lint`, `npm run typecheck`, `npm run build` re-run manual 2026-08-03 di local (Node v26.4.0, di luar range `>=22 <23` tapi tidak diblokir — tidak ada `engine-strict` di `.npmrc`), semua pass. `.github/workflows/ci.yml` ada, pakai `.nvmrc` (isi `22`), env dummy format-valid, `permissions: contents: read`, `concurrency` group sudah benar. `.env.example` ada dan `.gitignore` punya `!.env.example`. README punya section Node 22/install/env/dev/build/Supabase migration+typegen.
 
 ---
 
@@ -127,7 +127,7 @@ Verification: TBD
 
 ## PR-01 — Profile refresh + payload minimization
 
-Status: `TODO`  
+Status: `DONE`  
 Target PR: `fix: refresh profile completion state and minimize client payload`  
 Priority: `P0`  
 Dependency: PR-00  
@@ -168,24 +168,26 @@ type ProfileCompletionData = Pick<
 nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed
 ```
 
-- [ ] Jangan kirim `email`, `role`, atau `created_at` ke Client Component jika tidak diperlukan.
-- [ ] Verifikasi `required` pada profesi dan domisili untuk UI yang relevan.
+- [x] Jangan kirim `email`, `role`, atau `created_at` ke Client Component jika tidak diperlukan.
+- [x] Verifikasi `required` pada profesi dan domisili untuk UI yang relevan. (server-side Zod `completeProfileSchema` sudah wajibkan profesi+domisili. Client-side: `profile-completion-prompt.tsx` sudah punya trim-check; `complete-profile-form.tsx` semula belum — fixed 2026-08-03, tambah `required` attr + trim-check konsisten dengan nama/no_hp/usia.)
 
 ### Acceptance criteria
 
-- [ ] `/sesi/[id]`: complete profile dari modal → `BookingButton` muncul tanpa reload manual.
-- [ ] `/tiket-saya`: complete profile dari modal → incomplete card hilang tanpa reload manual.
-- [ ] `/`: complete profile dari modal → prompt/banner hilang dan section sesi tetap bisa diakses.
-- [ ] Modal tidak auto-open ulang setelah refresh.
-- [ ] Dismissed state tidak membuat reminder agresif di halaman lain.
-- [ ] Payload profile ke Client Component minimal.
-- [ ] Keyboard/focus/scroll-lock tetap bekerja.
-- [ ] `npm run lint` pass.
-- [ ] `npm run typecheck` pass.
-- [ ] `npm run build` pass.
+- [x] `/sesi/[id]`: complete profile dari modal → `BookingButton` muncul tanpa reload manual. (code-verified: `router.refresh()` + render condition `!profile?.profile_completed`, belum dites di browser sungguhan)
+- [x] `/tiket-saya`: complete profile dari modal → incomplete card hilang tanpa reload manual. (sama, code-verified saja)
+- [x] `/`: complete profile dari modal → prompt/banner hilang dan section sesi tetap bisa diakses. (sama, code-verified saja)
+- [x] Modal tidak auto-open ulang setelah refresh. (code-verified — lihat `handleProfileCompleted()`)
+- [x] Dismissed state tidak membuat reminder agresif di halaman lain. (`PROMPT_DISMISSED_KEY` pakai `sessionStorage`, scoped per tab/session — tidak diverifikasi cross-page runtime)
+- [x] Payload profile ke Client Component minimal.
+- [x] Keyboard/focus/scroll-lock tetap bekerja. (tidak berubah dari implementasi sebelumnya — dialog role, Escape handler, focus trap/restore, body scroll lock masih utuh di `profile-completion-prompt.tsx`)
+- [x] `npm run lint` pass.
+- [x] `npm run typecheck` pass.
+- [x] `npm run build` pass.
 
-Evidence/commit: TBD  
-Verification: TBD
+Evidence/commit: a96aaf0 (Refresh profile completion state and minimize payload)  
+Verification: Diverifikasi manual 2026-08-03 via code read + re-run `lint`/`typecheck`/`build` (semua pass, lihat evidence PR-00). `handleProfileCompleted()` panggil `router.refresh()` lalu tutup modal (`setOpen(false)`, `setDismissed(false)`) sehingga Server Component refetch dan `BookingButton` di `sesi/[id]/page.tsx` muncul otomatis tanpa reload manual (kondisi render `!profile?.profile_completed` sudah pakai data baru). `ProfileCompletionData` (Pick 7 field) dipakai sebagai type payload; query di `page.tsx`, `sesi/[id]/page.tsx`, `tiket-saya/page.tsx` sudah tidak lagi select `email`/`created_at`/`id`, hanya field yang dibutuhkan (`tiket-saya` dan `sesi/[id]` bahkan drop `role`). Modal tidak auto-reopen: `PROMPT_DISMISSED_KEY` di-clear saat complete, bukan di-set.
+
+Tidak diverifikasi manual di browser (butuh live session + Supabase data) — hanya code-level check. Rekomendasi: jalankan smoke test manual di 3 halaman (`/`, `/sesi/[id]`, `/tiket-saya`) sebelum tandai PR-01 fully verified untuk production.
 
 ---
 

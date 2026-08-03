@@ -55,6 +55,16 @@ export function CompleteProfileForm({
       return
     }
 
+    if (!form.profesi.trim()) {
+      setError('Profesi wajib diisi')
+      return
+    }
+
+    if (!form.domisili.trim()) {
+      setError('Domisili wajib diisi')
+      return
+    }
+
     setLoading(true)
 
     const result = await submitProfile(form)
@@ -126,6 +136,7 @@ export function CompleteProfileForm({
           <input
             value={form.profesi}
             onChange={updateField('profesi')}
+            required
             style={inputStyle}
           />
         </label>
@@ -135,6 +146,7 @@ export function CompleteProfileForm({
           <input
             value={form.domisili}
             onChange={updateField('domisili')}
+            required
             style={inputStyle}
           />
         </label>
