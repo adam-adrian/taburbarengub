@@ -283,7 +283,7 @@ Verification: Preflight sebelum push — `total_users=8, currently_completed=8, 
 
 ## PR-03 — Protect `kuota_terisi` from direct admin update
 
-Status: `TODO`  
+Status: `DONE`  
 Target PR: `fix(db): prevent direct quota counter updates`  
 Priority: `P1`  
 Dependency: PR-02  
@@ -322,15 +322,17 @@ Jika PostgREST/column grant bermasalah, gunakan RPC `admin_update_event_session(
 
 ### Acceptance criteria
 
-- [ ] Admin update nama/status/kapasitas via API berhasil.
-- [ ] Admin direct PostgREST update `kuota_terisi` ditolak.
-- [ ] User biasa update field apa pun ditolak RLS.
-- [ ] `create_booking()` SECURITY DEFINER tetap bisa increment counter.
-- [ ] API admin update dengan `.select('*')` tetap berfungsi atau disesuaikan.
-- [ ] Manual/direct API test dicatat.
+- [x] Admin update nama/status/kapasitas via API berhasil. (kode: `session-service.ts` kirim `SessionPayload` — persis 7 kolom yang di-grant, gak pernah nyertain `kuota_terisi`. Diverifikasi lewat raw SQL role-impersonation: update `kapasitas` sebagai `authenticated` sukses. Belum diverifikasi lewat klik UI browser sungguhan.)
+- [x] Admin direct PostgREST update `kuota_terisi` ditolak. (diverifikasi: `set local role authenticated` + `request.jwt.claims` admin, `update ... set kuota_terisi = 999` → `ERROR 42501 permission denied for table event_sessions`)
+- [x] User biasa update field apa pun ditolak RLS. (tidak berubah dari sebelumnya — RLS `event_sessions_admin_update` masih `USING/WITH CHECK (is_admin())`, jadi non-admin tetap ditolak di semua kolom sebelum sampai ke column grant. Tidak diverifikasi ulang karena scope PR ini gak ubah RLS.)
+- [x] `create_booking()` SECURITY DEFINER tetap bisa increment counter. (diverifikasi: `create_booking()` `prosecdef=true`, owner `postgres`; role `postgres` masih punya UPDATE penuh termasuk `kuota_terisi` — SECURITY DEFINER jalan pakai privilege owner, bukan caller, jadi revoke dari `authenticated` gak mempengaruhi. Tidak dites end-to-end lewat booking sungguhan karena itu bakal nulis row booking + naikin kuota event nyata di production — sengaja di-skip, correctness dijamin semantik Postgres + grant check di atas.)
+- [x] API admin update dengan `.select('*')` tetap berfungsi atau disesuaikan. (`.select('*')` di `session-service.ts:74` cuma baca — SELECT privilege gak disentuh migration ini, tetap `GRANT ALL` dari baseline.)
+- [x] Manual/direct API test dicatat. (lihat Verification di bawah)
 
-Evidence/commit: TBD  
-Verification: TBD
+Evidence/commit: migration `20260803010000_protect_kuota_terisi_column_grants.sql`, pushed ke Supabase cloud (`peqamnynsplqftrjrqoh`) via `npx supabase db push --linked` 2026-08-03.  
+Verification: `information_schema.column_privileges` post-migration — `authenticated` → `deskripsi, kapasitas, lokasi_atau_link, nama_sesi, status, tanggal_waktu, tipe` (7 kolom, tanpa `kuota_terisi`); `anon` hilang total dari privilege list (revoked). `postgres`/`service_role` tetap punya semua kolom termasuk `kuota_terisi`. Negative test: update `kuota_terisi` sebagai authenticated admin (via `set local role` + `request.jwt.claims` impersonation) → `42501 insufficient_privilege`. Positive test: update `kapasitas` dengan role sama → sukses, `kuota_terisi` gak berubah. `create_booking()` dikonfirmasi `SECURITY DEFINER` owner `postgres` (tidak dites booking sungguhan — lihat catatan di atas). `lint`/`typecheck`/`build` pass (gak ada app code berubah).
+
+Belum diverifikasi: klik-through admin UI beneran (`/admin/sesi/[id]/edit`) di browser, dan booking end-to-end lewat `create_booking()` di production nyata. Rekomendasi: coba manual sebelum anggap 100% verified kalau mau extra yakin.
 
 ---
 
