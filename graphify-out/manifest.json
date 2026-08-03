@@ -1,8 +1,8 @@
 {
   ".claude/settings.local.json": {
-    "mtime": 1785425540.3443332,
-    "ast_hash": "00b2369acb5ba9188f8350880a2c41df",
-    "semantic_hash": "00b2369acb5ba9188f8350880a2c41df"
+    "mtime": 1785736689.7403703,
+    "ast_hash": "476563c08f075822b40df056002a1a13",
+    "semantic_hash": "476563c08f075822b40df056002a1a13"
   },
   "docs/schema-fase1-annotated.sql": {
     "mtime": 1785111783.3443432,
@@ -20,9 +20,9 @@
     "semantic_hash": "073c476be067d6d4649b355483ee2690"
   },
   "package.json": {
-    "mtime": 1785113102.574921,
-    "ast_hash": "f75dbe769ddd12956ceb98ee07f77ed7",
-    "semantic_hash": "f75dbe769ddd12956ceb98ee07f77ed7"
+    "mtime": 1785486707.907018,
+    "ast_hash": "0f1a74283982478bb943b5f51adcc04f",
+    "semantic_hash": "0f1a74283982478bb943b5f51adcc04f"
   },
   "src/app/(auth)/forgot-password/page.tsx": {
     "mtime": 1785255993.8438618,
@@ -55,9 +55,9 @@
     "semantic_hash": "6700937d6bfab0cb914cf3a651b703d7"
   },
   "src/app/(member)/tiket-saya/page.tsx": {
-    "mtime": 1785416434.0679197,
-    "ast_hash": "b25d2b7ff73d2a758ea7e879d82577c5",
-    "semantic_hash": "b25d2b7ff73d2a758ea7e879d82577c5"
+    "mtime": 1785734232.4214158,
+    "ast_hash": "75f6b7ce0de30c21a983dab9591d82c8",
+    "semantic_hash": "75f6b7ce0de30c21a983dab9591d82c8"
   },
   "src/app/(member)/tiket-saya/ticket-qr-code.tsx": {
     "mtime": 1784992718.2178261,
@@ -155,9 +155,9 @@
     "semantic_hash": "674a54560a30783b506737d2ad6c3f35"
   },
   "src/app/complete-profile/complete-profile-form.tsx": {
-    "mtime": 1785414361.5025947,
-    "ast_hash": "e75a5b9dec4a97a020db11f41f3d1bf6",
-    "semantic_hash": "e75a5b9dec4a97a020db11f41f3d1bf6"
+    "mtime": 1785735414.2570677,
+    "ast_hash": "94120529d1d14e340bf6fe0a75b418c6",
+    "semantic_hash": "94120529d1d14e340bf6fe0a75b418c6"
   },
   "src/app/complete-profile/page.tsx": {
     "mtime": 1785323968.6398528,
@@ -165,14 +165,14 @@
     "semantic_hash": "e6765319d53a1d69f0d777eae6cd2c4e"
   },
   "src/app/complete-profile/profile-completion-prompt.tsx": {
-    "mtime": 1785422465.5117393,
-    "ast_hash": "e39e23aa9367c01c894d4c45045cd34b",
-    "semantic_hash": "e39e23aa9367c01c894d4c45045cd34b"
+    "mtime": 1785734232.4214158,
+    "ast_hash": "7fd0ae6b17e4946222fb51395b1859f8",
+    "semantic_hash": "7fd0ae6b17e4946222fb51395b1859f8"
   },
   "src/app/complete-profile/profile-form-shared.ts": {
-    "mtime": 1785414278.7879562,
-    "ast_hash": "eda527c2dda6d3221910cd08aefb61c9",
-    "semantic_hash": "eda527c2dda6d3221910cd08aefb61c9"
+    "mtime": 1785734232.4224243,
+    "ast_hash": "04902a799d1cb70ae8df401e3018d05f",
+    "semantic_hash": "04902a799d1cb70ae8df401e3018d05f"
   },
   "src/app/layout.tsx": {
     "mtime": 1784971872.971249,
@@ -185,9 +185,9 @@
     "semantic_hash": "05cb99f535ae4b92f02229da3a46090a"
   },
   "src/app/page.tsx": {
-    "mtime": 1785388625.1362388,
-    "ast_hash": "18d7c852f5fe59c42cc868610223dfe1",
-    "semantic_hash": "18d7c852f5fe59c42cc868610223dfe1"
+    "mtime": 1785734232.4224243,
+    "ast_hash": "4ce22d7bc52baa48decaa7e15e057282",
+    "semantic_hash": "4ce22d7bc52baa48decaa7e15e057282"
   },
   "src/app/sesi/[id]/booking-button.tsx": {
     "mtime": 1785239316.2339573,
@@ -195,9 +195,9 @@
     "semantic_hash": "98866c7b4a19489aaa37b02a304b2c49"
   },
   "src/app/sesi/[id]/page.tsx": {
-    "mtime": 1785388625.1363754,
-    "ast_hash": "b2f6fdc2f7abdce7ca5c05e1db7abea0",
-    "semantic_hash": "b2f6fdc2f7abdce7ca5c05e1db7abea0"
+    "mtime": 1785734232.4224243,
+    "ast_hash": "ff22beac190094214d2b2fcfaa929f97",
+    "semantic_hash": "ff22beac190094214d2b2fcfaa929f97"
   },
   "src/lib/auth/require-admin.ts": {
     "mtime": 1785135875.3004138,
@@ -245,7 +245,7 @@
     "semantic_hash": "13286a8c01ae678c3548c0a13436044f"
   },
   "src/lib/types/database.types.ts": {
-    "mtime": 1785373598.8314052,
+    "mtime": 1785735920.4538195,
     "ast_hash": "4b9fa4874a477b66bed3f17ecf9d91f6",
     "semantic_hash": "4b9fa4874a477b66bed3f17ecf9d91f6"
   },
@@ -340,9 +340,9 @@
     "semantic_hash": "5c27369b226fcf2be8a6cfe52224e767"
   },
   "README.md": {
-    "mtime": 1784877591.1708262,
-    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
-    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+    "mtime": 1785486707.907018,
+    "ast_hash": "0874f6f51af5f35aac0df35f76079409",
+    "semantic_hash": "0874f6f51af5f35aac0df35f76079409"
   },
   "docs/ARCHITECTURE.md": {
     "mtime": 1785403461.0810313,
@@ -393,5 +393,25 @@
     "mtime": 1784877591.1715322,
     "ast_hash": "a2760511c65806022ad20adf74370ff3",
     "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "supabase/migrations/20260803000000_enforce_profile_completion_invariant.sql": {
+    "mtime": 1785735780.8252532,
+    "ast_hash": "101e06ed74b9aa04724085c53d464aa0",
+    "semantic_hash": "101e06ed74b9aa04724085c53d464aa0"
+  },
+  "supabase/migrations/20260803010000_protect_kuota_terisi_column_grants.sql": {
+    "mtime": 1785736636.4175236,
+    "ast_hash": "6504f6ca82c2f85e1c9dc6b90b1bb9f2",
+    "semantic_hash": "6504f6ca82c2f85e1c9dc6b90b1bb9f2"
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1785486707.907018,
+    "ast_hash": "4de3b33aa20cfa25ce66a04bc35e2103",
+    "semantic_hash": "4de3b33aa20cfa25ce66a04bc35e2103"
+  },
+  "docs/REVIEW_ACTION_TRACKER.md": {
+    "mtime": 1785736828.107742,
+    "ast_hash": "e6bc0a0dc713de1526f6b6ab962870be",
+    "semantic_hash": "e6bc0a0dc713de1526f6b6ab962870be"
   }
 }

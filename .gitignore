@@ -49,6 +49,7 @@ supabase/.temp
 backup-*.sql
 *.zip.txt
 2026-*-coba-review-project-ini.txt
+/hasil-review-analisa
 
 # Local env overrides
 .env.development.local
