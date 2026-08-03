@@ -45,7 +45,7 @@ export default async function SessionDetailPage({
           .maybeSingle(),
         supabase
           .from('users')
-          .select('id, email, role, created_at, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
+          .select('nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
           .eq('id', user.id)
           .maybeSingle(),
       ])

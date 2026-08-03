@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   createInitialState,
@@ -52,6 +53,7 @@ export function ProfileCompletionPrompt({
   showDismissedBanner?: boolean
   triggerLabel?: string
 }) {
+  const router = useRouter()
   const [mode, setMode] = useState<PromptMode>('reminder')
   const [open, setOpen] = useState(false)
   const [dismissed, setDismissed] = useState(false)
@@ -203,7 +205,11 @@ export function ProfileCompletionPrompt({
     setOpen(false)
     setDismissed(false)
     setMinBodyHeight(0)
-    document.getElementById('sesi')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    router.refresh()
+
+    window.requestAnimationFrame(() => {
+      document.getElementById('sesi')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   function goToIdentity() {

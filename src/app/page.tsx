@@ -106,7 +106,7 @@ export default async function Home() {
     user
       ? supabase
           .from('users')
-          .select('id, email, role, created_at, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
+          .select('role, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
           .eq('id', user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -123,6 +123,17 @@ export default async function Home() {
   const bookingBySessionId = new Map(
     (userBookings ?? []).map((booking) => [booking.session_id, booking])
   )
+  const profileCompletionData = profile
+    ? {
+        nama: profile.nama,
+        nama_panggilan: profile.nama_panggilan,
+        no_hp: profile.no_hp,
+        usia: profile.usia,
+        profesi: profile.profesi,
+        domisili: profile.domisili,
+        profile_completed: profile.profile_completed,
+      }
+    : null
   const isAdmin = profile?.role === 'admin'
 
   return (
@@ -501,7 +512,7 @@ export default async function Home() {
       </footer>
 
       {user && !profile?.profile_completed && (
-        <ProfileCompletionPrompt profile={profile ?? null} />
+        <ProfileCompletionPrompt profile={profileCompletionData} />
       )}
     </main>
   )

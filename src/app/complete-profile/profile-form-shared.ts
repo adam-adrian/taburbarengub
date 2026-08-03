@@ -1,7 +1,20 @@
 import type { CSSProperties } from 'react'
 import type { Database } from '@/lib/types/database.types'
 
-export type UserProfile = Database['public']['Tables']['users']['Row']
+type UserProfileRow = Database['public']['Tables']['users']['Row']
+
+export type ProfileCompletionData = Pick<
+  UserProfileRow,
+  | 'nama'
+  | 'nama_panggilan'
+  | 'no_hp'
+  | 'usia'
+  | 'profesi'
+  | 'domisili'
+  | 'profile_completed'
+>
+
+export type UserProfile = ProfileCompletionData
 
 export type ProfileFormState = {
   nama: string
