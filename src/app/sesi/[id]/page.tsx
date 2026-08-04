@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
+import type { UserProfile } from '@/app/complete-profile/profile-form-shared'
 import { BookingButton } from './booking-button'
+import { resolveBookingCta, type BookingCta } from './booking-cta'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -10,6 +12,126 @@ function formatDateTime(value: string) {
     timeStyle: 'short',
     timeZone: 'Asia/Jakarta',
   }).format(new Date(value))
+}
+
+const disabledButtonStyle = { padding: '12px 16px', borderRadius: 10 }
+
+const ticketLinkStyle = {
+  background: '#ecfdf5',
+  color: '#047857',
+  padding: '12px 16px',
+  borderRadius: 10,
+  fontWeight: 700,
+  border: '1px solid #a7f3d0',
+}
+
+const primaryLinkStyle = {
+  background: '#111827',
+  color: '#fff',
+  padding: '12px 16px',
+  borderRadius: 10,
+  fontWeight: 700,
+}
+
+function ticketLabel(cta: Extract<BookingCta, { tag: 'has_booking' }>) {
+  if (cta.checkedIn) return 'Kamu sudah hadir — lihat tiket'
+  if (cta.sessionPast) return 'Lihat tiket — sesi sudah selesai'
+  return 'Kamu sudah booking — lihat tiket'
+}
+
+/**
+ * Merender satu CTA sesuai keputusan resolveBookingCta().
+ *
+ * Semua cabang wajib ditangani: `default` menugaskan `cta` ke `never`, jadi
+ * menambah varian BookingCta tanpa menambah case di sini gagal saat compile,
+ * bukan diam-diam merender kosong seperti ternary sebelumnya.
+ */
+function BookingCtaAction({
+  cta,
+  sessionId,
+  profile,
+}: {
+  cta: BookingCta
+  sessionId: string
+  profile: UserProfile | null
+}) {
+  switch (cta.tag) {
+    case 'has_booking':
+      return (
+        <Link href={`/tiket-saya/${cta.bookingId}`} style={ticketLinkStyle}>
+          {ticketLabel(cta)}
+        </Link>
+      )
+
+    case 'cancelled':
+      // Kalimat netral — pembatalan bisa datang dari admin, bukan cuma user.
+      return (
+        <button disabled style={disabledButtonStyle}>
+          Booking dibatalkan
+        </button>
+      )
+
+    case 'past':
+      return (
+        <button disabled style={disabledButtonStyle}>
+          Sesi sudah selesai
+        </button>
+      )
+
+    case 'online_locked':
+      return (
+        <button disabled style={disabledButtonStyle}>
+          Sesi online terkunci
+        </button>
+      )
+
+    case 'full':
+      return (
+        <button disabled style={disabledButtonStyle}>
+          Kuota penuh
+        </button>
+      )
+
+    case 'needs_login':
+      return (
+        <Link href="/login" style={primaryLinkStyle}>
+          Masuk untuk Booking
+        </Link>
+      )
+
+    case 'profile_incomplete':
+      return (
+        <ProfileCompletionPrompt
+          profile={profile}
+          autoOpen={false}
+          showDismissedBanner={false}
+          triggerLabel="Lengkapi Profil untuk Booking"
+        />
+      )
+
+    case 'unavailable':
+      // Jangan menawarkan form di sini: kalau baris profilnya memang hilang,
+      // complete_user_profile() pasti menolak dengan TB404.
+      return (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <button disabled style={disabledButtonStyle}>
+            Booking belum tersedia
+          </button>
+          <p role="alert" style={{ color: '#b91c1c', lineHeight: 1.5 }}>
+            Data profil gagal dimuat. Coba muat ulang halaman — kalau tetap
+            gagal, hubungi panitia.
+          </p>
+        </div>
+      )
+
+    case 'can_book':
+      return <BookingButton sessionId={sessionId} />
+
+    default: {
+      const unhandled: never = cta
+      throw new Error(`CTA tidak tertangani: ${JSON.stringify(unhandled)}`)
+    }
+  }
 }
 
 export default async function SessionDetailPage({
@@ -35,7 +157,7 @@ export default async function SessionDetailPage({
     notFound()
   }
 
-  const [{ data: existingBooking }, { data: profile }] = user
+  const [{ data: existingBooking }, { data: profile, error: profileError }] = user
     ? await Promise.all([
         supabase
           .from('bookings')
@@ -49,12 +171,22 @@ export default async function SessionDetailPage({
           .eq('id', user.id)
           .maybeSingle(),
       ])
-    : [{ data: null }, { data: null }]
+    : [{ data: null }, { data: null, error: null }]
 
+  // Satu `now` untuk seluruh render, supaya teks kuota dan CTA tidak bisa
+  // menyimpulkan hal berbeda soal sesi yang tepat lewat saat request berjalan.
+  const now = new Date()
   const sisaKuota = Math.max(session.kapasitas - session.kuota_terisi, 0)
-  const isOffline = session.tipe === 'offline'
-  const isFull = sisaKuota <= 0
-  const isPast = new Date(session.tanggal_waktu) <= new Date()
+  const isPast = new Date(session.tanggal_waktu) <= now
+
+  const cta = resolveBookingCta({
+    session,
+    user,
+    profile,
+    profileLoadFailed: profileError !== null,
+    booking: existingBooking,
+    now,
+  })
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
@@ -131,55 +263,7 @@ export default async function SessionDetailPage({
           )}
 
           <div style={{ marginTop: 32, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {isPast ? (
-              <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
-                Sesi sudah selesai
-              </button>
-            ) : !isOffline ? (
-              <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
-                Sesi online terkunci
-              </button>
-            ) : isFull ? (
-              <button disabled style={{ padding: '12px 16px', borderRadius: 10 }}>
-                Kuota penuh
-              </button>
-            ) : existingBooking ? (
-              <Link
-                href={`/tiket-saya/${existingBooking.id}`}
-                style={{
-                  background: '#ecfdf5',
-                  color: '#047857',
-                  padding: '12px 16px',
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  border: '1px solid #a7f3d0',
-                }}
-              >
-                Kamu sudah booking — lihat tiket
-              </Link>
-            ) : user && !profile?.profile_completed ? (
-              <ProfileCompletionPrompt
-                profile={profile ?? null}
-                autoOpen={false}
-                showDismissedBanner={false}
-                triggerLabel="Lengkapi Profil untuk Booking"
-              />
-            ) : user ? (
-              <BookingButton sessionId={session.id} />
-            ) : (
-              <Link
-                href="/login"
-                style={{
-                  background: '#111827',
-                  color: '#fff',
-                  padding: '12px 16px',
-                  borderRadius: 10,
-                  fontWeight: 700,
-                }}
-              >
-                Masuk untuk Booking
-              </Link>
-            )}
+            <BookingCtaAction cta={cta} sessionId={session.id} profile={profile ?? null} />
           </div>
         </article>
       </div>
