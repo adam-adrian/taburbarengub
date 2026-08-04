@@ -1,14 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-
-type UserSummary = {
-  nama: string
-  email: string
-  no_hp: string
-  profesi: string | null
-  domisili: string | null
-}
+import { formatDateTimeCompact } from '@/lib/format'
+import { getUser, type UserSummary } from '@/features/session/shared/participant'
 
 type ParticipantBooking = {
   id: string
@@ -16,22 +10,6 @@ type ParticipantBooking = {
   created_at: string
   checked_in_at: string | null
   users: UserSummary | UserSummary[] | null
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
-}
-
-function getUser(booking: ParticipantBooking) {
-  if (Array.isArray(booking.users)) {
-    return booking.users[0] ?? null
-  }
-
-  return booking.users
 }
 
 function badgeStyle(status: string) {
@@ -179,7 +157,7 @@ export default async function AdminSessionDetailPage({
         >
           <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 14, padding: 16 }}>
             <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 4 }}>Jadwal</p>
-            <strong>{formatDateTime(session.tanggal_waktu)} WIB</strong>
+            <strong>{formatDateTimeCompact(session.tanggal_waktu)} WIB</strong>
           </div>
           <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 14, padding: 16 }}>
             <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 4 }}>Booking aktif</p>
@@ -269,8 +247,8 @@ export default async function AdminSessionDetailPage({
                       <p><strong>Email:</strong> {participant?.email ?? '-'}</p>
                       <p><strong>Profesi:</strong> {participant?.profesi ?? '-'}</p>
                       <p><strong>Domisili:</strong> {participant?.domisili ?? '-'}</p>
-                      <p><strong>Booking:</strong> {formatDateTime(booking.created_at)} WIB</p>
-                      <p><strong>Check-in:</strong> {booking.checked_in_at ? `${formatDateTime(booking.checked_in_at)} WIB` : '-'}</p>
+                      <p><strong>Booking:</strong> {formatDateTimeCompact(booking.created_at)} WIB</p>
+                      <p><strong>Check-in:</strong> {booking.checked_in_at ? `${formatDateTimeCompact(booking.checked_in_at)} WIB` : '-'}</p>
                     </div>
                   </article>
                 )

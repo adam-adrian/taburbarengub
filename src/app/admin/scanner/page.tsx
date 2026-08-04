@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { formatDateTimeCompact } from '@/lib/format'
 
 type ScannerStatus = 'idle' | 'starting' | 'scanning' | 'stopped' | 'error'
 
@@ -44,14 +45,6 @@ type CheckInResult = {
   tanggal_waktu: string
   booking_status: string
   checked_in_at: string
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
 }
 
 const READER_ELEMENT_ID = 'qr-scanner-reader'
@@ -335,9 +328,9 @@ export default function AdminScannerPage() {
               <div style={{ display: 'grid', gap: 6, lineHeight: 1.6 }}>
                 <p><strong>Nama:</strong> {checkInResult.nama}</p>
                 <p><strong>Sesi:</strong> {checkInResult.nama_sesi}</p>
-                <p><strong>Jadwal:</strong> {formatDateTime(checkInResult.tanggal_waktu)} WIB</p>
+                <p><strong>Jadwal:</strong> {formatDateTimeCompact(checkInResult.tanggal_waktu)} WIB</p>
                 <p><strong>Status:</strong> {checkInResult.booking_status}</p>
-                <p><strong>Waktu check-in:</strong> {formatDateTime(checkInResult.checked_in_at)} WIB</p>
+                <p><strong>Waktu check-in:</strong> {formatDateTimeCompact(checkInResult.checked_in_at)} WIB</p>
               </div>
             </div>
           )}

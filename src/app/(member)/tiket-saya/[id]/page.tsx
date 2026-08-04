@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { formatDateTime } from '@/lib/format'
+import { statusLabel, statusStyle } from '@/features/booking/shared/booking-status'
 import { TicketQrCode } from '@/features/booking/client/ticket-qr-code'
-
-type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
 
 type SessionSummary = {
   id: string
@@ -12,51 +12,6 @@ type SessionSummary = {
   tanggal_waktu: string
   lokasi_atau_link: string | null
   deskripsi: string | null
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
-}
-
-function statusLabel(status: BookingStatus) {
-  switch (status) {
-    case 'booked':
-      return 'Booked'
-    case 'checked_in':
-      return 'Checked-in'
-    case 'cancelled':
-      return 'Dibatalkan'
-    default:
-      return status
-  }
-}
-
-function statusStyle(status: BookingStatus) {
-  if (status === 'checked_in') {
-    return {
-      background: '#ecfdf5',
-      color: '#047857',
-      border: '1px solid #a7f3d0',
-    } as const
-  }
-
-  if (status === 'cancelled') {
-    return {
-      background: '#fef2f2',
-      color: '#b91c1c',
-      border: '1px solid #fecaca',
-    } as const
-  }
-
-  return {
-    background: '#eff6ff',
-    color: '#1d4ed8',
-    border: '1px solid #bfdbfe',
-  } as const
 }
 
 export default async function TicketDetailPage({

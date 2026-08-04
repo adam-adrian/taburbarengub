@@ -6,14 +6,7 @@ import { resolveBookingCta, type BookingCta } from '@/features/booking/shared/bo
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getProfileGate } from '@/features/profile/server/profile-service'
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
-}
+import { formatDateTime } from '@/lib/format'
 
 const disabledButtonStyle = { padding: '12px 16px', borderRadius: 10 }
 

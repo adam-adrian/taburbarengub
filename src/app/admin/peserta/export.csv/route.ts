@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-type UserSummary = {
-  nama: string
-  email: string
-  no_hp: string
-  profesi: string | null
-  domisili: string | null
-}
+import { AuthError, requireAdmin } from '@/lib/auth/require-admin'
+import { getUser, type UserSummary } from '@/features/session/shared/participant'
 
 type ExportBooking = {
   id: string
@@ -15,14 +9,6 @@ type ExportBooking = {
   created_at: string
   checked_in_at: string | null
   users: UserSummary | UserSummary[] | null
-}
-
-function getUser(booking: ExportBooking) {
-  if (Array.isArray(booking.users)) {
-    return booking.users[0] ?? null
-  }
-
-  return booking.users
 }
 
 // Karakter yang bikin Excel/LibreOffice/Sheets menafsirkan isi cell sebagai
@@ -94,23 +80,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'session_id wajib diisi' }, { status: 400 })
   }
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Kamu harus login dulu' }, { status: 401 })
-  }
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') {
-    return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
+  try {
+    await requireAdmin(supabase)
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    throw err
   }
 
   const { data: session, error: sessionError } = await supabase

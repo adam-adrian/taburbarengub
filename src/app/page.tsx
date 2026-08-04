@@ -2,14 +2,7 @@ import Link from 'next/link'
 import { ProfileCompletionPrompt } from '@/features/profile/client/profile-completion-prompt'
 import { createClient } from '@/lib/supabase/server'
 import { getProfileGate } from '@/features/profile/server/profile-service'
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
-}
+import { formatDateTime } from '@/lib/format'
 
 function sessionTypeLabel(type: string) {
   return type === 'offline' ? 'Offline' : 'Online'

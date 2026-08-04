@@ -1,14 +1,7 @@
 import Link from 'next/link'
 import styles from './sesi.module.css'
 import { createClient } from '@/lib/supabase/server'
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
-}
+import { formatDateTimeCompact } from '@/lib/format'
 
 function statusStyle(status: string) {
   if (status === 'published') {
@@ -148,7 +141,7 @@ export default async function AdminSesiPage() {
                         </span>
                       </td>
                       <td style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top' }}>
-                        {formatDateTime(session.tanggal_waktu)} WIB
+                        {formatDateTimeCompact(session.tanggal_waktu)} WIB
                       </td>
                       <td style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top' }}>
                         <strong>{session.kuota_terisi}</strong> / {session.kapasitas}
@@ -234,7 +227,7 @@ export default async function AdminSesiPage() {
                     </div>
 
                     <div style={{ color: '#4b5563', lineHeight: 1.6 }}>
-                      <p>{formatDateTime(session.tanggal_waktu)} WIB</p>
+                      <p>{formatDateTimeCompact(session.tanggal_waktu)} WIB</p>
                       {session.lokasi_atau_link && <p>{session.lokasi_atau_link}</p>}
                     </div>
 

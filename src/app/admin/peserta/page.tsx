@@ -1,16 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { formatDateTimeCompact } from '@/lib/format'
+import { getUser, type UserSummary } from '@/features/session/shared/participant'
 
 type SearchParams = {
   session_id?: string
-}
-
-type UserSummary = {
-  nama: string
-  email: string
-  no_hp: string
-  profesi: string | null
-  domisili: string | null
 }
 
 type ParticipantBooking = {
@@ -19,14 +13,6 @@ type ParticipantBooking = {
   created_at: string
   checked_in_at: string | null
   users: UserSummary | UserSummary[] | null
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta',
-  }).format(new Date(value))
 }
 
 function getStatusStyle(status: string) {
@@ -39,14 +25,6 @@ function getStatusStyle(status: string) {
   }
 
   return { background: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
-}
-
-function getUser(booking: ParticipantBooking) {
-  if (Array.isArray(booking.users)) {
-    return booking.users[0] ?? null
-  }
-
-  return booking.users
 }
 
 export default async function AdminPesertaPage({
@@ -209,7 +187,7 @@ export default async function AdminPesertaPage({
                 >
                   {safeSessions.map((session) => (
                     <option key={session.id} value={session.id}>
-                      {session.nama_sesi} — {formatDateTime(session.tanggal_waktu)} WIB
+                      {session.nama_sesi} — {formatDateTimeCompact(session.tanggal_waktu)} WIB
                     </option>
                   ))}
                 </select>
@@ -331,10 +309,10 @@ export default async function AdminPesertaPage({
                             </span>
                           </td>
                           <td style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top' }}>
-                            {formatDateTime(booking.created_at)} WIB
+                            {formatDateTimeCompact(booking.created_at)} WIB
                           </td>
                           <td style={{ padding: '14px 16px', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top' }}>
-                            {booking.checked_in_at ? `${formatDateTime(booking.checked_in_at)} WIB` : '-'}
+                            {booking.checked_in_at ? `${formatDateTimeCompact(booking.checked_in_at)} WIB` : '-'}
                           </td>
                         </tr>
                       )
