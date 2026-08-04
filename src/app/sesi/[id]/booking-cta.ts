@@ -83,12 +83,16 @@ export type BookingCtaInput = {
     kapasitas: number
     kuota_terisi: number
   }
-  /** null = belum login. */
-  user: { id: string } | null
-  /** null = belum login, atau baris profil tidak ditemukan. */
-  profile: { profile_completed: boolean } | null
-  /** true kalau query profil error — dibedakan dari profile === null. */
-  profileLoadFailed: boolean
+  /**
+   * Keadaan profil, biasanya diisi `gate.tag` dari getProfileGate().
+   *
+   * Sengaja dideklarasikan ulang di sini sebagai union tag saja, bukan
+   * meng-import ProfileGate — itu yang menjaga modul ini bebas dependensi
+   * sehingga bisa dikompilasi dan diuji sendiri. Kalau tag di profile-service
+   * berubah, pemanggilnya gagal compile, jadi keduanya tidak bisa menyimpang
+   * diam-diam.
+   */
+  profileState: 'anonymous' | 'unavailable' | 'incomplete' | 'complete'
   /** Booking user untuk sesi ini, apa pun statusnya. null = belum pernah. */
   booking: { id: string; status: string } | null
   /** Disuntik supaya bisa diuji, jangan panggil new Date() di dalam. */
@@ -96,7 +100,7 @@ export type BookingCtaInput = {
 }
 
 export function resolveBookingCta(input: BookingCtaInput): BookingCta {
-  const { session, user, profile, profileLoadFailed, booking, now } = input
+  const { session, profileState, booking, now } = input
 
   const isPast = new Date(session.tanggal_waktu) <= now
   const isOnline = session.tipe === 'online'
@@ -140,14 +144,12 @@ export function resolveBookingCta(input: BookingCtaInput): BookingCta {
   if (isFull) return { tag: 'full' }
 
   // ── 3. Syarat bertindak ───────────────────────────────────────────────
-  if (user === null) return { tag: 'needs_login' }
-
-  // Gagal muat dicek sebelum menyimpulkan profil belum lengkap — tanpa ini,
-  // error query tampil sebagai "lengkapi profil" ke user yang profilnya
-  // sebenarnya sudah lengkap.
-  if (profileLoadFailed || profile === null) return { tag: 'unavailable' }
-
-  if (!profile.profile_completed) return { tag: 'profile_incomplete' }
+  // Urutan mengikuti ProfileGate: 'unavailable' harus mendahului kesimpulan
+  // "belum lengkap", supaya kegagalan baca tidak tampil sebagai suruhan
+  // mengisi form kepada user yang profilnya sebenarnya sudah lengkap.
+  if (profileState === 'anonymous') return { tag: 'needs_login' }
+  if (profileState === 'unavailable') return { tag: 'unavailable' }
+  if (profileState === 'incomplete') return { tag: 'profile_incomplete' }
 
   return { tag: 'can_book' }
 }

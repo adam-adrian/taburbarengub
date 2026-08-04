@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getProfileGate } from '@/lib/services/profile-service'
 import { CompleteProfileForm } from './complete-profile-form'
 
 export default async function CompleteProfilePage() {
@@ -13,15 +14,43 @@ export default async function CompleteProfilePage() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
+  const gate = await getProfileGate(supabase, user.id)
 
-  if (profile?.profile_completed) {
+  if (gate.tag === 'complete') {
     redirect('/')
   }
+
+  // Formnya tidak akan berhasil kalau profil tak bisa dipastikan:
+  // complete_user_profile() melakukan UPDATE, bukan UPSERT, jadi baris yang
+  // hilang selalu berujung TB404. Tampilkan sebabnya, bukan form buntu.
+  if (gate.tag === 'unavailable') {
+    return (
+      <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 20px 80px' }}>
+          <div
+            role="alert"
+            style={{
+              border: '1px solid #fecaca',
+              background: '#fef2f2',
+              color: '#991b1b',
+              padding: 24,
+              borderRadius: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            <h1 style={{ fontSize: 24, marginBottom: 8 }}>Data profil tidak bisa dimuat</h1>
+            <p>
+              {gate.reason === 'query_failed'
+                ? 'Terjadi gangguan saat membaca data profilmu. Coba muat ulang halaman ini.'
+                : 'Data peserta untuk akun ini tidak ditemukan, jadi formnya belum bisa dipakai. Hubungi panitia untuk dipulihkan.'}
+            </p>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  const profile = gate.profile
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>

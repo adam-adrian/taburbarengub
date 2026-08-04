@@ -48,3 +48,76 @@ export async function completeUserProfile(
 
   return data as UserProfile
 }
+
+/**
+ * Keadaan profil user terhadap syarat booking.
+ *
+ * Menggantikan pola `!profile?.profile_completed` yang dipakai terpisah di
+ * beberapa halaman. Pola itu memampatkan empat keadaan berbeda jadi satu
+ * boolean, sehingga query yang gagal tidak bisa dibedakan dari profil yang
+ * memang belum diisi — dan keduanya berujung menampilkan form.
+ */
+export type ProfileGate =
+  /** Belum login. */
+  | { tag: 'anonymous' }
+  /**
+   * Profil tidak bisa dipastikan. Jangan menawarkan form lengkapi profil di
+   * keadaan ini: kalau barisnya memang hilang, complete_user_profile()
+   * melakukan UPDATE (bukan UPSERT) sehingga selalu gagal dengan TB404.
+   */
+  | { tag: 'unavailable'; reason: 'query_failed' | 'row_missing' }
+  /** Profil ada tapi belum lengkap — booking akan ditolak TB106. */
+  | { tag: 'incomplete'; profile: UserProfile }
+  /** Profil lengkap, boleh booking. */
+  | { tag: 'complete'; profile: UserProfile }
+
+/** ProfileGate untuk pemanggil yang sudah memastikan user-nya login. */
+export type AuthenticatedProfileGate = Exclude<ProfileGate, { tag: 'anonymous' }>
+
+/**
+ * Membaca profil user dan menyimpulkan keadaannya dalam satu tempat.
+ *
+ * `userId` null berarti belum login, supaya pemanggil tidak perlu menyiapkan
+ * cabang sendiri sebelum memanggil. Kalau userId dipastikan ada (halaman yang
+ * sudah redirect ke /login lebih dulu), overload pertama membuang varian
+ * 'anonymous' dari hasilnya supaya tidak ada cabang mati di pemanggil.
+ */
+export async function getProfileGate(
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<AuthenticatedProfileGate>
+export async function getProfileGate(
+  supabase: SupabaseClient<Database>,
+  userId: string | null
+): Promise<ProfileGate>
+export async function getProfileGate(
+  supabase: SupabaseClient<Database>,
+  userId: string | null
+): Promise<ProfileGate> {
+  if (userId === null) {
+    return { tag: 'anonymous' }
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('getProfileGate: gagal membaca profil', error.code, error.message)
+    return { tag: 'unavailable', reason: 'query_failed' }
+  }
+
+  if (data === null) {
+    // Akun ada di auth.users tapi barisnya di public.users tidak ada — dua
+    // tabel terpisah, dijembatani trigger handle_new_user() yang cuma jalan
+    // saat INSERT, jadi penghapusan di satu sisi tidak tersinkron.
+    console.error('getProfileGate: baris public.users hilang untuk', userId)
+    return { tag: 'unavailable', reason: 'row_missing' }
+  }
+
+  return data.profile_completed
+    ? { tag: 'complete', profile: data }
+    : { tag: 'incomplete', profile: data }
+}

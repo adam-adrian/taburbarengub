@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getProfileGate } from '@/lib/services/profile-service'
 import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
 
 type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
@@ -69,11 +70,7 @@ export default async function TiketSayaPage() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
-    .eq('id', user.id)
-    .maybeSingle()
+  const gate = await getProfileGate(supabase, user.id)
 
   const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
@@ -126,7 +123,24 @@ export default async function TiketSayaPage() {
           </div>
         )}
 
-        {!bookingsError && !profile?.profile_completed && (
+        {gate.tag === 'unavailable' && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 24,
+              border: '1px solid #fed7aa',
+              background: '#fff7ed',
+              color: '#9a3412',
+              padding: 16,
+              borderRadius: 12,
+            }}
+          >
+            Data profil gagal dimuat, jadi status kelengkapannya tidak bisa
+            ditampilkan. Tiketmu di bawah tetap berlaku.
+          </div>
+        )}
+
+        {!bookingsError && gate.tag === 'incomplete' && (
           <div
             style={{
               marginTop: 24,
@@ -142,7 +156,7 @@ export default async function TiketSayaPage() {
               Lengkapi profil peserta terlebih dahulu sebelum melakukan booking dan mendapatkan tiket QR.
             </p>
             <ProfileCompletionPrompt
-              profile={profile ?? null}
+              profile={gate.profile}
               autoOpen={false}
               showDismissedBanner={false}
               triggerLabel="Lengkapi Profil"
@@ -150,7 +164,7 @@ export default async function TiketSayaPage() {
           </div>
         )}
 
-        {!bookingsError && profile?.profile_completed && safeBookings.length === 0 && (
+        {!bookingsError && safeBookings.length === 0 && gate.tag !== 'incomplete' && (
           <div
             style={{
               marginTop: 24,
@@ -180,7 +194,15 @@ export default async function TiketSayaPage() {
           </div>
         )}
 
-        {profile?.profile_completed && (
+        {/*
+          Daftar tiket sengaja TIDAK digerbangi profile_completed. Profil
+          lengkap adalah prasyarat booking yang sudah ditegakkan di hulu
+          (TB106 di create_booking()), jadi keberadaan baris bookings sudah
+          membuktikannya. Mengecek ulang di sini tidak pernah menyaring apa
+          pun saat normal, tapi menyembunyikan seluruh QR ketika query
+          profilnya sendiri yang gagal — tepat saat user butuh check-in.
+        */}
+        {safeBookings.length > 0 && (
         <div style={{ display: 'grid', gap: 18, marginTop: 24 }}>
           {safeBookings.map((booking) => {
             const session = sessionById.get(booking.session_id)

@@ -5,6 +5,7 @@ import { BookingButton } from './booking-button'
 import { resolveBookingCta, type BookingCta } from './booking-cta'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getProfileGate } from '@/lib/services/profile-service'
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -157,21 +158,17 @@ export default async function SessionDetailPage({
     notFound()
   }
 
-  const [{ data: existingBooking }, { data: profile, error: profileError }] = user
-    ? await Promise.all([
-        supabase
+  const [{ data: existingBooking }, gate] = await Promise.all([
+    user
+      ? supabase
           .from('bookings')
           .select('id, status')
           .eq('user_id', user.id)
           .eq('session_id', session.id)
-          .maybeSingle(),
-        supabase
-          .from('users')
-          .select('nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
-          .eq('id', user.id)
-          .maybeSingle(),
-      ])
-    : [{ data: null }, { data: null, error: null }]
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    getProfileGate(supabase, user?.id ?? null),
+  ])
 
   // Satu `now` untuk seluruh render, supaya teks kuota dan CTA tidak bisa
   // menyimpulkan hal berbeda soal sesi yang tepat lewat saat request berjalan.
@@ -181,9 +178,7 @@ export default async function SessionDetailPage({
 
   const cta = resolveBookingCta({
     session,
-    user,
-    profile,
-    profileLoadFailed: profileError !== null,
+    profileState: gate.tag,
     booking: existingBooking,
     now,
   })
@@ -263,7 +258,11 @@ export default async function SessionDetailPage({
           )}
 
           <div style={{ marginTop: 32, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <BookingCtaAction cta={cta} sessionId={session.id} profile={profile ?? null} />
+            <BookingCtaAction
+              cta={cta}
+              sessionId={session.id}
+              profile={gate.tag === 'incomplete' ? gate.profile : null}
+            />
           </div>
         </article>
       </div>

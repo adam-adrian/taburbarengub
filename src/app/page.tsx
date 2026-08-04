@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ProfileCompletionPrompt } from './complete-profile/profile-completion-prompt'
 import { createClient } from '@/lib/supabase/server'
+import { getProfileGate } from '@/lib/services/profile-service'
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -86,7 +87,7 @@ export default async function Home() {
     { data: hero },
     { data: upcomingSessionsData, error: upcomingSessionsError },
     { data: historySessionsData, error: historySessionsError },
-    { data: profile },
+    gate,
     { data: userBookings },
   ] = await Promise.all([
     supabase.from('hero_content').select('*').eq('id', 1).maybeSingle(),
@@ -103,13 +104,7 @@ export default async function Home() {
       .lt('tanggal_waktu', nowIso)
       .order('tanggal_waktu', { ascending: false })
       .limit(6),
-    user
-      ? supabase
-          .from('users')
-          .select('role, nama, nama_panggilan, no_hp, usia, profesi, domisili, profile_completed')
-          .eq('id', user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+    getProfileGate(supabase, user?.id ?? null),
     user
       ? supabase
           .from('bookings')
@@ -123,17 +118,9 @@ export default async function Home() {
   const bookingBySessionId = new Map(
     (userBookings ?? []).map((booking) => [booking.session_id, booking])
   )
-  const profileCompletionData = profile
-    ? {
-        nama: profile.nama,
-        nama_panggilan: profile.nama_panggilan,
-        no_hp: profile.no_hp,
-        usia: profile.usia,
-        profesi: profile.profesi,
-        domisili: profile.domisili,
-        profile_completed: profile.profile_completed,
-      }
-    : null
+  // Profil hanya ada kalau gate berhasil membacanya. Tidak perlu memetakan
+  // ulang field satu per satu — ProfileCompletionPrompt menerima baris utuh.
+  const profile = gate.tag === 'complete' || gate.tag === 'incomplete' ? gate.profile : null
   const isAdmin = profile?.role === 'admin'
 
   return (
@@ -511,8 +498,13 @@ export default async function Home() {
         </div>
       </footer>
 
-      {user && !profile?.profile_completed && (
-        <ProfileCompletionPrompt profile={profileCompletionData} />
+      {/*
+        Hanya saat profil terbaca dan memang belum lengkap. Pada 'unavailable'
+        form ini dijamin gagal (complete_user_profile() ber-UPDATE, bukan
+        UPSERT, jadi baris yang hilang berujung TB404), jadi jangan ditawarkan.
+      */}
+      {gate.tag === 'incomplete' && (
+        <ProfileCompletionPrompt profile={gate.profile} />
       )}
     </main>
   )
