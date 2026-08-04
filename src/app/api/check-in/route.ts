@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { checkInSchema } from '@/lib/validators/checkin.schema'
-import { checkInBooking, CheckInError } from '@/lib/services/checkin-service'
+import { checkInSchema } from '@/features/checkin/shared/checkin.schema'
+import { checkInBooking, CheckInError } from '@/features/checkin/server/checkin-service'
 
 export async function POST(request: Request) {
   const supabase = await createClient()

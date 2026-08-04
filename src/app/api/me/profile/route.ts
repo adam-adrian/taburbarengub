@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { completeUserProfile, ProfileError } from '@/lib/services/profile-service'
+import { completeUserProfile, ProfileError } from '@/features/profile/server/profile-service'
 import { createClient } from '@/lib/supabase/server'
-import { completeProfileSchema } from '@/lib/validators/profile.schema'
+import { completeProfileSchema } from '@/features/profile/shared/profile.schema'
 
 export async function PATCH(request: Request) {
   const supabase = await createClient()

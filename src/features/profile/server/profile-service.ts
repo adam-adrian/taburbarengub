@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.types'
-import type { CompleteProfileInput } from '@/lib/validators/profile.schema'
+import type { CompleteProfileInput } from '@/features/profile/shared/profile.schema'
 
 type UserProfile = Database['public']['Tables']['users']['Row']
 

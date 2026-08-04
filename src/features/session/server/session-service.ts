@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.types'
-import type { SessionPayload } from '@/lib/validators/session.schema'
+import type { SessionPayload } from '@/features/session/shared/session.schema'
 
 type EventSession = Database['public']['Tables']['event_sessions']['Row']
 

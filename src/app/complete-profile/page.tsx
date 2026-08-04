@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getProfileGate } from '@/lib/services/profile-service'
-import { CompleteProfileForm } from './complete-profile-form'
+import { getProfileGate } from '@/features/profile/server/profile-service'
+import { CompleteProfileForm } from '@/features/profile/client/complete-profile-form'
 
 export default async function CompleteProfilePage() {
   const supabase = await createClient()

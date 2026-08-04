@@ -10,7 +10,7 @@ import {
   submitProfile,
   type ProfileFormState,
   type UserProfile,
-} from './profile-form-shared'
+} from '@/features/profile/shared/profile-form-shared'
 
 type PromptMode = 'welcome' | 'reminder'
 type WizardStep = 'welcome' | 'identity' | 'extra'

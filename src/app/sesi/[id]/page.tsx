@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
-import type { UserProfile } from '@/app/complete-profile/profile-form-shared'
-import { BookingButton } from './booking-button'
-import { resolveBookingCta, type BookingCta } from './booking-cta'
+import { ProfileCompletionPrompt } from '@/features/profile/client/profile-completion-prompt'
+import type { UserProfile } from '@/features/profile/shared/profile-form-shared'
+import { BookingButton } from '@/features/booking/client/booking-button'
+import { resolveBookingCta, type BookingCta } from '@/features/booking/shared/booking-cta'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getProfileGate } from '@/lib/services/profile-service'
+import { getProfileGate } from '@/features/profile/server/profile-service'
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {

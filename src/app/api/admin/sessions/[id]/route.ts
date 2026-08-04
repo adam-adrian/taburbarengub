@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { AuthError, requireAdmin } from '@/lib/auth/require-admin'
-import { updateEventSession, SessionError } from '@/lib/services/session-service'
+import { updateEventSession, SessionError } from '@/features/session/server/session-service'
 import { createClient } from '@/lib/supabase/server'
-import { sessionPayloadSchema } from '@/lib/validators/session.schema'
+import { sessionPayloadSchema } from '@/features/session/shared/session.schema'
 
 const paramsSchema = z.object({
   id: z.string().uuid({ message: 'session id tidak valid' }),

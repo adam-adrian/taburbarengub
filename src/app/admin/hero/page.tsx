@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { HeroForm } from './hero-form'
+import { HeroForm } from '@/features/hero/client/hero-form'
 
 export default async function AdminHeroPage() {
   const supabase = await createClient()

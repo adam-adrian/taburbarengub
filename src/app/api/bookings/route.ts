@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createBookingSchema } from '@/lib/validators/booking.schema'
-import { createBooking, BookingError } from '@/lib/services/booking-service'
+import { createBookingSchema } from '@/features/booking/shared/booking.schema'
+import { createBooking, BookingError } from '@/features/booking/server/booking-service'
 
 export async function POST(request: Request) {
   const supabase = await createClient()

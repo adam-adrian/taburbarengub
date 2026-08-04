@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getProfileGate } from '@/lib/services/profile-service'
-import { ProfileCompletionPrompt } from '@/app/complete-profile/profile-completion-prompt'
+import { getProfileGate } from '@/features/profile/server/profile-service'
+import { ProfileCompletionPrompt } from '@/features/profile/client/profile-completion-prompt'
 
 type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
 

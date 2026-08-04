@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { TicketQrCode } from '../ticket-qr-code'
+import { TicketQrCode } from '@/features/booking/client/ticket-qr-code'
 
 type BookingStatus = 'booked' | 'checked_in' | 'cancelled' | string
 

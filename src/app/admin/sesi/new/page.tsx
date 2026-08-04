@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { SessionForm } from '../session-form'
+import { SessionForm } from '@/features/session/client/session-form'
 
 export default function NewSessionPage() {
   return (

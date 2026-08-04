@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.types'
-import type { HeroContentPayload } from '@/lib/validators/hero.schema'
+import type { HeroContentPayload } from '@/features/hero/shared/hero.schema'
 
 type HeroContent = Database['public']['Tables']['hero_content']['Row']
 

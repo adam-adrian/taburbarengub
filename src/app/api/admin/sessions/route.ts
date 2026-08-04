@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { AuthError, requireAdmin } from '@/lib/auth/require-admin'
-import { createEventSession, SessionError } from '@/lib/services/session-service'
+import { createEventSession, SessionError } from '@/features/session/server/session-service'
 import { createClient } from '@/lib/supabase/server'
-import { sessionPayloadSchema } from '@/lib/validators/session.schema'
+import { sessionPayloadSchema } from '@/features/session/shared/session.schema'
 
 export async function POST(request: Request) {
   const supabase = await createClient()

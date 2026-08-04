@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { AuthError, requireAdmin } from '@/lib/auth/require-admin'
-import { updateHeroContent, HeroContentError } from '@/lib/services/hero-service'
+import { updateHeroContent, HeroContentError } from '@/features/hero/server/hero-service'
 import { createClient } from '@/lib/supabase/server'
-import { heroContentSchema } from '@/lib/validators/hero.schema'
+import { heroContentSchema } from '@/features/hero/shared/hero.schema'
 
 export async function PATCH(request: Request) {
   const supabase = await createClient()

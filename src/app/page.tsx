@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { ProfileCompletionPrompt } from './complete-profile/profile-completion-prompt'
+import { ProfileCompletionPrompt } from '@/features/profile/client/profile-completion-prompt'
 import { createClient } from '@/lib/supabase/server'
-import { getProfileGate } from '@/lib/services/profile-service'
+import { getProfileGate } from '@/features/profile/server/profile-service'
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
