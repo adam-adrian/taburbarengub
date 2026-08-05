@@ -1,10 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { formatDateTimeCompact } from '@/lib/format'
-
-type ScannerStatus = 'idle' | 'starting' | 'scanning' | 'stopped' | 'error'
+import {
+  canStopScanner,
+  initialScannerState,
+  isScannerBusy,
+  scannerReducer,
+  type CheckInResult,
+  type ScannerState,
+} from '@/features/checkin/client/scanner-reducer'
 
 type CameraDevice = {
   id: string
@@ -36,54 +42,60 @@ type Html5QrcodeModule = {
   }
 }
 
-type CheckInResult = {
-  booking_id: string
-  user_id: string
-  session_id: string
-  nama: string
-  nama_sesi: string
-  tanggal_waktu: string
-  booking_status: string
-  checked_in_at: string
-}
-
 const READER_ELEMENT_ID = 'qr-scanner-reader'
 
-function getStatusLabel(status: ScannerStatus, checkingIn: boolean) {
-  if (checkingIn) return 'Memproses check-in'
-
-  switch (status) {
+function getStatusLabel(state: ScannerState) {
+  switch (state.tag) {
+    case 'idle':
+      return 'Belum mulai'
     case 'starting':
       return 'Menyalakan kamera'
     case 'scanning':
       return 'Siap scan'
-    case 'stopped':
-      return 'Scanner berhenti'
+    case 'checking_in':
+      return 'Memproses check-in'
+    case 'success':
+      return 'Check-in berhasil'
     case 'error':
       return 'Ada masalah'
-    default:
-      return 'Belum mulai'
+    case 'stopped':
+      return 'Scanner berhenti'
+    default: {
+      const unhandled: never = state
+      throw new Error(`Unhandled scanner state: ${JSON.stringify(unhandled)}`)
+    }
   }
 }
 
-function getStatusColor(status: ScannerStatus, checkingIn: boolean) {
-  if (checkingIn) return { background: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
-  if (status === 'scanning') return { background: '#ecfdf5', color: '#047857', border: '#a7f3d0' }
-  if (status === 'error') return { background: '#fef2f2', color: '#b91c1c', border: '#fecaca' }
-  return { background: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
+function getStatusColor(state: ScannerState) {
+  switch (state.tag) {
+    case 'checking_in':
+      return { background: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+    case 'scanning':
+    case 'success':
+      return { background: '#ecfdf5', color: '#047857', border: '#a7f3d0' }
+    case 'error':
+      return { background: '#fef2f2', color: '#b91c1c', border: '#fecaca' }
+    case 'idle':
+    case 'starting':
+    case 'stopped':
+      return { background: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
+    default: {
+      const unhandled: never = state
+      throw new Error(`Unhandled scanner state: ${JSON.stringify(unhandled)}`)
+    }
+  }
 }
 
 export default function AdminScannerPage() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null)
   const processingRef = useRef(false)
-  const [status, setStatus] = useState<ScannerStatus>('idle')
-  const [result, setResult] = useState<string | null>(null)
-  const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null)
-  const [checkingIn, setCheckingIn] = useState(false)
-  const [scannerAvailable, setScannerAvailable] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(scannerReducer, initialScannerState)
 
-  async function stopScanner() {
+  // Cuma beresin kamera (Html5Qrcode instance). Nggak dispatch — dipanggil
+  // dari submitCheckIn() yang state-nya lagi transit ke 'checking_in', bukan
+  // 'stopped'. Tombol Stop manual yang dispatch 'stopped' sendiri di bawah.
+  async function stopCameraResources() {
     const scanner = scannerRef.current
     if (!scanner) return
 
@@ -96,21 +108,21 @@ export default function AdminScannerPage() {
       // Gagal stop/clear tidak perlu bikin UI error.
     } finally {
       scannerRef.current = null
-      setScannerAvailable(false)
-      setStatus('stopped')
     }
+  }
+
+  async function handleStopClick() {
+    await stopCameraResources()
+    dispatch({ type: 'stopped' })
   }
 
   async function submitCheckIn(qrToken: string) {
     if (processingRef.current) return
 
     processingRef.current = true
-    setCheckingIn(true)
-    setResult(qrToken)
-    setCheckInResult(null)
-    setError(null)
+    dispatch({ type: 'qr_scanned', qrToken })
 
-    await stopScanner()
+    await stopCameraResources()
 
     try {
       const response = await fetch('/api/check-in', {
@@ -130,33 +142,31 @@ export default function AdminScannerPage() {
           typeof payload?.error === 'string'
             ? payload.error
             : 'Gagal memproses check-in, coba lagi'
-        setError(message)
+        dispatch({ type: 'check_in_failed', message })
         return
       }
 
       if (payload?.data) {
-        setCheckInResult(payload.data)
+        dispatch({ type: 'check_in_succeeded', result: payload.data })
       } else {
-        setError('Response check-in tidak valid')
+        dispatch({ type: 'check_in_failed', message: 'Response check-in tidak valid' })
       }
     } catch {
-      setError('Tidak bisa terhubung ke server, coba lagi')
+      dispatch({ type: 'check_in_failed', message: 'Tidak bisa terhubung ke server, coba lagi' })
     } finally {
-      setCheckingIn(false)
       processingRef.current = false
     }
   }
 
   async function startScanner() {
-    setError(null)
-    setResult(null)
-    setCheckInResult(null)
-    setStatus('starting')
     processingRef.current = false
+    dispatch({ type: 'start_requested' })
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setStatus('error')
-      setError('Browser ini tidak mendukung akses kamera. Coba Chrome Android atau Safari iOS terbaru.')
+      dispatch({
+        type: 'camera_unsupported',
+        message: 'Browser ini tidak mendukung akses kamera. Coba Chrome Android atau Safari iOS terbaru.',
+      })
       return
     }
 
@@ -164,7 +174,6 @@ export default function AdminScannerPage() {
       const { Html5Qrcode } = (await import('html5-qrcode')) as unknown as Html5QrcodeModule
       const scanner = new Html5Qrcode(READER_ELEMENT_ID)
       scannerRef.current = scanner
-      setScannerAvailable(true)
 
       const config: ScannerStartConfig = {
         fps: 10,
@@ -198,12 +207,13 @@ export default function AdminScannerPage() {
         )
       }
 
-      setStatus('scanning')
+      dispatch({ type: 'scanner_started' })
     } catch (err) {
       scannerRef.current = null
-      setScannerAvailable(false)
-      setStatus('error')
-      setError(err instanceof Error ? err.message : 'Gagal menyalakan scanner QR')
+      dispatch({
+        type: 'scanner_start_failed',
+        message: err instanceof Error ? err.message : 'Gagal menyalakan scanner QR',
+      })
     }
   }
 
@@ -216,7 +226,10 @@ export default function AdminScannerPage() {
     }
   }, [])
 
-  const statusColor = getStatusColor(status, checkingIn)
+  const statusColor = getStatusColor(state)
+  const busy = isScannerBusy(state)
+  const scannedQrToken =
+    state.tag === 'checking_in' ? state.qrToken : state.tag === 'error' ? state.qrToken : null
 
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
@@ -256,7 +269,7 @@ export default function AdminScannerPage() {
                 border: `1px solid ${statusColor.border}`,
               }}
             >
-              {getStatusLabel(status, checkingIn)}
+              {getStatusLabel(state)}
             </span>
           </div>
 
@@ -285,23 +298,27 @@ export default function AdminScannerPage() {
             <button
               type="button"
               onClick={startScanner}
-              disabled={status === 'starting' || status === 'scanning' || checkingIn}
+              disabled={busy}
               style={{
-                background: status === 'starting' || status === 'scanning' || checkingIn ? '#9ca3af' : '#111827',
+                background: busy ? '#9ca3af' : '#111827',
                 color: '#ffffff',
                 border: 0,
                 borderRadius: 10,
                 padding: '11px 16px',
                 fontWeight: 800,
-                cursor: status === 'starting' || status === 'scanning' || checkingIn ? 'not-allowed' : 'pointer',
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
             >
-              {status === 'starting' ? 'Menyalakan kamera...' : checkingIn ? 'Memproses...' : 'Mulai scan'}
+              {state.tag === 'starting'
+                ? 'Menyalakan kamera...'
+                : state.tag === 'checking_in'
+                  ? 'Memproses...'
+                  : 'Mulai scan'}
             </button>
             <button
               type="button"
-              onClick={stopScanner}
-              disabled={!scannerAvailable}
+              onClick={handleStopClick}
+              disabled={!canStopScanner(state)}
               style={{
                 background: '#ffffff',
                 color: '#111827',
@@ -309,42 +326,42 @@ export default function AdminScannerPage() {
                 borderRadius: 10,
                 padding: '11px 16px',
                 fontWeight: 800,
-                cursor: scannerAvailable ? 'pointer' : 'not-allowed',
+                cursor: canStopScanner(state) ? 'pointer' : 'not-allowed',
               }}
             >
               Stop
             </button>
           </div>
 
-          {checkingIn && (
+          {state.tag === 'checking_in' && (
             <div style={{ padding: 14, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', marginTop: 16, borderRadius: 12 }}>
               Memproses check-in...
             </div>
           )}
 
-          {checkInResult && (
+          {state.tag === 'success' && (
             <div role="status" style={{ padding: 18, border: '1px solid #a7f3d0', background: '#ecfdf5', color: '#064e3b', marginTop: 16, borderRadius: 12 }}>
               <h2 style={{ marginBottom: 10, fontSize: 22 }}>Check-in berhasil</h2>
               <div style={{ display: 'grid', gap: 6, lineHeight: 1.6 }}>
-                <p><strong>Nama:</strong> {checkInResult.nama}</p>
-                <p><strong>Sesi:</strong> {checkInResult.nama_sesi}</p>
-                <p><strong>Jadwal:</strong> {formatDateTimeCompact(checkInResult.tanggal_waktu)} WIB</p>
-                <p><strong>Status:</strong> {checkInResult.booking_status}</p>
-                <p><strong>Waktu check-in:</strong> {formatDateTimeCompact(checkInResult.checked_in_at)} WIB</p>
+                <p><strong>Nama:</strong> {state.result.nama}</p>
+                <p><strong>Sesi:</strong> {state.result.nama_sesi}</p>
+                <p><strong>Jadwal:</strong> {formatDateTimeCompact(state.result.tanggal_waktu)} WIB</p>
+                <p><strong>Status:</strong> {state.result.booking_status}</p>
+                <p><strong>Waktu check-in:</strong> {formatDateTimeCompact(state.result.checked_in_at)} WIB</p>
               </div>
             </div>
           )}
 
-          {result && !checkInResult && (
+          {scannedQrToken && (
             <div style={{ padding: 14, border: '1px solid #e5e7eb', background: '#f9fafb', marginTop: 16, borderRadius: 12 }}>
               <strong>QR terbaca:</strong>
-              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 8, color: '#4b5563' }}>{result}</pre>
+              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 8, color: '#4b5563' }}>{scannedQrToken}</pre>
             </div>
           )}
 
-          {error && (
+          {state.tag === 'error' && (
             <div role="alert" style={{ padding: 18, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', marginTop: 16, borderRadius: 12 }}>
-              <strong>Gagal:</strong> {error}
+              <strong>Gagal:</strong> {state.message}
             </div>
           )}
         </section>
