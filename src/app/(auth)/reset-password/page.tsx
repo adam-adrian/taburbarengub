@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { notifyRouteReplaced } from '@/lib/navigation/history-depth'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -128,6 +129,7 @@ export default function ResetPasswordPage() {
     setSuccess(true)
 
     setTimeout(() => {
+      notifyRouteReplaced()
       router.replace('/login')
       router.refresh()
     }, 1200)

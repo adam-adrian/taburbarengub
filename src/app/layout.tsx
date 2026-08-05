@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { HistoryDepthTracker } from '@/components/ui/history-depth-tracker'
 import './globals.css'
 
 const geistSans = Geist({
@@ -24,7 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <HistoryDepthTracker />
+        {children}
+      </body>
     </html>
   )
 }

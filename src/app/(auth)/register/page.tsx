@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { notifyRouteReplaced } from '@/lib/navigation/history-depth'
 import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -49,6 +50,7 @@ export default function RegisterPage() {
     window.sessionStorage.removeItem('taburbarengub.profilePromptDismissed')
     // replace, bukan push: form register yang sudah dilewati jangan sampai bisa
     // dicapai lagi lewat tombol back.
+    notifyRouteReplaced()
     router.replace('/')
     router.refresh()
   }

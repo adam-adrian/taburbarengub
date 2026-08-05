@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { notifyRouteReplaced } from '@/lib/navigation/history-depth'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -23,6 +24,7 @@ export default function LogoutPage() {
         return
       }
 
+      notifyRouteReplaced()
       router.replace('/login')
       router.refresh()
     }
