@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react'
 import {
   createInitialState,
   errorBoxStyle,
@@ -11,9 +11,11 @@ import {
   type ProfileFormState,
   type UserProfile,
 } from '@/features/profile/shared/profile-form-shared'
-
-type PromptMode = 'welcome' | 'reminder'
-type WizardStep = 'welcome' | 'identity' | 'extra'
+import {
+  initialPromptVisibility,
+  promptVisibilityReducer,
+  type WizardStep,
+} from '@/features/profile/client/prompt-visibility-reducer'
 
 const ONBOARDING_MODE_KEY = 'taburbarengub.profileOnboardingMode'
 const PROMPT_DISMISSED_KEY = 'taburbarengub.profilePromptDismissed'
@@ -54,10 +56,11 @@ export function ProfileCompletionPrompt({
   triggerLabel?: string
 }) {
   const router = useRouter()
-  const [mode, setMode] = useState<PromptMode>('reminder')
-  const [open, setOpen] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
-  const [step, setStep] = useState<WizardStep>('welcome')
+  const [visibility, dispatch] = useReducer(promptVisibilityReducer, initialPromptVisibility)
+  const mode = visibility.mode
+  const open = visibility.tag === 'open'
+  const dismissed = visibility.tag === 'dismissed'
+  const step: WizardStep = visibility.tag === 'open' ? visibility.step : 'welcome'
   const [form, setForm] = useState<ProfileFormState>(() => createInitialState(profile))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -78,16 +81,16 @@ export function ProfileCompletionPrompt({
       const wasDismissed = window.sessionStorage.getItem(PROMPT_DISMISSED_KEY) === 'true'
 
       if (storedMode === 'welcome') {
-        setMode('welcome')
+        dispatch({ type: 'mode_set_welcome' })
         window.sessionStorage.removeItem(ONBOARDING_MODE_KEY)
         window.sessionStorage.removeItem(PROMPT_DISMISSED_KEY)
       } else if (wasDismissed) {
-        setDismissed(true)
+        dispatch({ type: 'dismissed_restored' })
         return
       }
 
       if (autoOpen) {
-        setOpen(true)
+        dispatch({ type: 'auto_opened' })
       }
     }, ONBOARDING_DELAY_MS)
 
@@ -189,21 +192,18 @@ export function ProfileCompletionPrompt({
   }
 
   function openPrompt() {
-    setOpen(true)
-    setDismissed(false)
+    dispatch({ type: 'opened' })
   }
 
   function closePrompt() {
     window.sessionStorage.setItem(PROMPT_DISMISSED_KEY, 'true')
-    setOpen(false)
-    setDismissed(true)
+    dispatch({ type: 'closed' })
     setMinBodyHeight(0)
   }
 
   function handleProfileCompleted() {
     window.sessionStorage.removeItem(PROMPT_DISMISSED_KEY)
-    setOpen(false)
-    setDismissed(false)
+    dispatch({ type: 'completed' })
     setMinBodyHeight(0)
     router.refresh()
 
@@ -214,7 +214,7 @@ export function ProfileCompletionPrompt({
 
   function goToIdentity() {
     setError(null)
-    setStep('identity')
+    dispatch({ type: 'step_changed', step: 'identity' })
   }
 
   function goToExtra() {
@@ -230,7 +230,7 @@ export function ProfileCompletionPrompt({
       return
     }
 
-    setStep('extra')
+    dispatch({ type: 'step_changed', step: 'extra' })
   }
 
   async function handleSubmit() {
@@ -504,7 +504,7 @@ export function ProfileCompletionPrompt({
 
               {step === 'identity' && (
                 <>
-                  <button type="button" onClick={() => { setError(null); setStep('welcome') }} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => { setError(null); dispatch({ type: 'step_changed', step: 'welcome' }) }} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: 'pointer' }}>
                     Kembali
                   </button>
                   <button type="button" onClick={goToExtra} style={primaryButtonStyle(false)}>
@@ -515,7 +515,7 @@ export function ProfileCompletionPrompt({
 
               {step === 'extra' && (
                 <>
-                  <button type="button" onClick={() => { setError(null); setStep('identity') }} disabled={loading} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
+                  <button type="button" onClick={() => { setError(null); dispatch({ type: 'step_changed', step: 'identity' }) }} disabled={loading} style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db', borderRadius: 10, padding: '11px 16px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer' }}>
                     Kembali
                   </button>
                   <button type="button" onClick={handleSubmit} disabled={loading} style={primaryButtonStyle(loading)}>
