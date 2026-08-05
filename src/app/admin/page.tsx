@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/back-link'
 
 const menuItems = [
   {
@@ -37,9 +38,7 @@ export default function AdminDashboardPage() {
           }}
         >
           <div>
-            <Link href="/" style={{ color: '#4b5563' }}>
-              ← Kembali ke landing page
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Admin Dashboard</h1>
             <p style={{ color: '#6b7280', marginTop: 8 }}>
               Panel awal untuk mengelola sesi, peserta, dan check-in event.

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTimeCompact } from '@/lib/format'
 import { getUser, type UserSummary } from '@/features/session/shared/participant'
@@ -106,9 +107,7 @@ export default async function AdminSessionDetailPage({
           }}
         >
           <div>
-            <Link href="/admin/sesi" style={{ color: '#4b5563' }}>
-              ← Kembali ke daftar sesi
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 34, marginTop: 16, letterSpacing: -0.8 }}>
               {session.nama_sesi}
             </h1>

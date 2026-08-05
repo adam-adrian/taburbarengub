@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/back-link'
 import { ProfileCompletionPrompt } from '@/features/profile/client/profile-completion-prompt'
 import type { UserProfile } from '@/features/profile/shared/profile-form-shared'
 import { BookingButton } from '@/features/booking/client/booking-button'
@@ -179,9 +180,7 @@ export default async function SessionDetailPage({
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <Link href="/" style={{ color: '#4b5563' }}>
-          ← Kembali ke landing page
-        </Link>
+        <BackLink />
 
         <article
           style={{

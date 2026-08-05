@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/format'
 import { statusLabel, statusStyle } from '@/features/booking/shared/booking-status'
@@ -53,9 +53,7 @@ export default async function TicketDetailPage({
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <Link href="/tiket-saya" style={{ color: '#4b5563' }}>
-          ← Kembali ke Tiket Saya
-        </Link>
+        <BackLink />
 
         <article
           style={{

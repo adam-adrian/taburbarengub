@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useReducer, useRef } from 'react'
+import { BackLink } from '@/components/ui/back-link'
 import { formatDateTimeCompact } from '@/lib/format'
 import {
   canStopScanner,
@@ -234,9 +234,7 @@ export default function AdminScannerPage() {
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 80px' }}>
-        <Link href="/admin" style={{ color: '#4b5563', display: 'inline-block', marginBottom: 20 }}>
-          ← Kembali ke admin
-        </Link>
+        <BackLink style={{ display: 'inline-block', marginBottom: 20 }} />
 
         <section
           style={{

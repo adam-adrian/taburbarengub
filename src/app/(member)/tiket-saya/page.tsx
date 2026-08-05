@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/format'
 import { statusLabel, statusStyle } from '@/features/booking/shared/booking-status'
@@ -52,9 +53,7 @@ export default async function TiketSayaPage() {
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px 80px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
           <div>
-            <Link href="/" style={{ color: '#4b5563' }}>
-              ← Kembali ke landing page
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Tiket Saya</h1>
             <p style={{ color: '#6b7280', marginTop: 8 }}>
               Pilih tiket untuk membuka QR check-in. Satu halaman detail hanya menampilkan satu QR agar tidak salah scan.

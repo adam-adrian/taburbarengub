@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -33,7 +34,9 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/')
+    // replace, bukan push: form login yang sudah dilewati jangan sampai bisa
+    // dicapai lagi lewat tombol back.
+    router.replace('/')
     router.refresh()
   }
 
@@ -54,9 +57,7 @@ export default function LoginPage() {
           }}
         >
           <div>
-            <Link href="/" style={{ color: '#4b5563', fontSize: 14 }}>
-              ← Kembali ke landing page
-            </Link>
+            <BackLink style={{ fontSize: 14 }} />
             <h1 style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: -0.8, marginTop: 18 }}>
               Masuk
             </h1>

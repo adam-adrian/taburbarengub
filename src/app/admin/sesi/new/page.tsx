@@ -1,13 +1,11 @@
-import Link from 'next/link'
+import { BackLink } from '@/components/ui/back-link'
 import { SessionForm } from '@/features/session/client/session-form'
 
 export default function NewSessionPage() {
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <Link href="/admin/sesi" style={{ color: '#4b5563' }}>
-          ← Kembali ke daftar sesi
-        </Link>
+        <BackLink />
 
         <section
           style={{

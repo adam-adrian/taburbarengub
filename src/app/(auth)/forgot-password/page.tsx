@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
@@ -51,9 +51,7 @@ export default function ForgotPasswordPage() {
           }}
         >
           <div>
-            <Link href="/login" style={{ color: '#4b5563' }}>
-              ← Kembali ke login
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 32, marginTop: 16, letterSpacing: -0.8 }}>Lupa Password</h1>
             <p style={{ color: '#6b7280', lineHeight: 1.6, marginTop: 8 }}>
               Masukkan email akun kamu. Jika email terdaftar, kami akan mengirim link untuk membuat password baru.

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTimeCompact } from '@/lib/format'
 import { getUser, type UserSummary } from '@/features/session/shared/participant'
@@ -84,9 +85,7 @@ export default async function AdminPesertaPage({
           }}
         >
           <div>
-            <Link href="/admin" style={{ color: '#4b5563' }}>
-              ← Kembali ke admin
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Daftar Peserta</h1>
             <p style={{ color: '#6b7280', marginTop: 8 }}>
               Lihat peserta per sesi beserta status booking dan check-in.

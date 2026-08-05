@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
@@ -46,7 +47,9 @@ export default function RegisterPage() {
 
     window.sessionStorage.setItem('taburbarengub.profileOnboardingMode', 'welcome')
     window.sessionStorage.removeItem('taburbarengub.profilePromptDismissed')
-    router.push('/')
+    // replace, bukan push: form register yang sudah dilewati jangan sampai bisa
+    // dicapai lagi lewat tombol back.
+    router.replace('/')
     router.refresh()
   }
 
@@ -67,9 +70,7 @@ export default function RegisterPage() {
           }}
         >
           <div>
-            <Link href="/" style={{ color: '#4b5563', fontSize: 14 }}>
-              ← Kembali ke landing page
-            </Link>
+            <BackLink style={{ fontSize: 14 }} />
             <h1 style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: -0.8, marginTop: 18 }}>
               Buat Akun
             </h1>

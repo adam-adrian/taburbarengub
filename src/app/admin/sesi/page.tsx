@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import styles from './sesi.module.css'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTimeCompact } from '@/lib/format'
 
@@ -46,9 +47,7 @@ export default async function AdminSesiPage() {
           }}
         >
           <div>
-            <Link href="/admin" style={{ color: '#4b5563' }}>
-              ← Kembali ke admin
-            </Link>
+            <BackLink />
             <h1 style={{ fontSize: 36, marginTop: 16, letterSpacing: -0.8 }}>Kelola Sesi</h1>
             <p style={{ color: '#6b7280', marginTop: 8 }}>
               Daftar semua sesi event. Kuota terisi bersifat read-only dan dikelola sistem booking.

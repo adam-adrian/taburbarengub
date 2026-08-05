@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { BackLink } from '@/components/ui/back-link'
 import { createClient } from '@/lib/supabase/server'
 import { HeroForm } from '@/features/hero/client/hero-form'
 
@@ -14,9 +14,7 @@ export default async function AdminHeroPage() {
   return (
     <main style={{ minHeight: '100vh', background: '#fafafa', color: '#171717' }}>
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <Link href="/admin" style={{ color: '#4b5563' }}>
-          ← Kembali ke admin
-        </Link>
+        <BackLink />
 
         <section
           style={{
