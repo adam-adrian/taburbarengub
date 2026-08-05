@@ -109,7 +109,22 @@ Gunakan HP/browser admin untuk test scanner di HTTPS deploy URL.
 - [ ] CSV tidak mengeksekusi formula spreadsheet dari input user.
 - [ ] User biasa/non-admin tidak bisa mengakses export CSV.
 
-## 9. Build checks
+## 9. Navigasi "Kembali"
+
+Perilaku back-link beda tergantung ada/tidaknya history in-app, jadi dua jalurnya
+harus dites terpisah. Lihat `docs/ROADMAP.md` §7.6.
+
+- [ ] Turun normal `/` → `/tiket-saya` → tiket detail, lalu Kembali 2x sampai `/`. Harus **instan** (tidak ada skeleton, tidak ada request baru) dan posisi scroll kembali seperti semula.
+- [ ] Buka URL tiket detail langsung di tab baru (simulasi link di-share / QR), lalu Kembali 2x. Harus sampai `/` tanpa keluar dari app dan **tanpa muter** balik ke halaman tiket.
+- [ ] Buka `/admin/scanner` langsung di tab baru, klik Kembali. Harus ke `/admin`, bukan keluar app.
+- [ ] Pakai tombol back/forward browser di tengah alur, lalu klik Kembali. Tidak boleh muter antara dua halaman.
+- [ ] Sesudah login berhasil, tombol back browser tidak boleh kembali ke form login.
+- [ ] Klik-tengah / buka-di-tab-baru pada tombol Kembali tetap membuka halaman parent di tab baru.
+
+Prefetch cuma aktif di production build. Untuk mengukur kecepatan, tes lewat
+`npm run build && npm run start`, bukan `npm run dev`.
+
+## 10. Build checks
 
 Sebelum deploy besar:
 
@@ -120,7 +135,7 @@ npm run build
 
 Keduanya harus lulus.
 
-## 10. Catatan hasil
+## 11. Catatan hasil
 
 Isi manual setelah test:
 

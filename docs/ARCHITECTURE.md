@@ -26,7 +26,7 @@ Kalau dipetakan ke istilah klasik:
 ```text
 View        ≈ React pages/components
 Controller  ≈ src/app/api/**/route.ts
-Service     ≈ src/lib/services/*
+Service     ≈ src/features/*/server/*
 Model/Data  ≈ Supabase tables + generated Database types
 Invariant   ≈ Postgres RLS/RPC/triggers/constraints
 ```
@@ -61,7 +61,9 @@ Lokasi:
 
 ```text
 src/app/**/page.tsx
-src/components/*
+src/app/**/layout.tsx
+src/app/**/loading.tsx
+src/components/ui/*
 ```
 
 Tugas:
@@ -78,8 +80,11 @@ Contoh:
 src/app/page.tsx
 src/app/(member)/tiket-saya/page.tsx
 src/app/admin/sesi/page.tsx
-src/components/logout-button.tsx
+src/components/ui/back-link.tsx
 ```
+
+`src/components/ui/` adalah komponen presentational lintas fitur. Komponen
+yang cuma dipakai satu fitur tinggal di `src/features/<fitur>/client/`.
 
 ### 4.2 Client interaction layer
 
@@ -99,10 +104,15 @@ Tugas:
 Contoh:
 
 ```text
-src/app/sesi/[id]/booking-button.tsx
-src/app/admin/sesi/session-form.tsx
+src/features/booking/client/booking-button.tsx
+src/features/session/client/session-form.tsx
 src/app/admin/scanner/page.tsx
 ```
+
+State yang punya banyak kemungkinan kombinasi ditulis sebagai discriminated
+union + `useReducer` di modul terpisah tanpa import React, supaya transisinya
+bisa diuji lepas dari komponen — lihat `src/features/checkin/client/scanner-reducer.ts`
+dan `src/features/profile/client/prompt-visibility-reducer.ts`.
 
 ### 4.3 API/controller layer
 
@@ -135,7 +145,7 @@ PATCH /api/admin/sessions/[id]
 Lokasi:
 
 ```text
-src/lib/services/*
+src/features/*/server/*
 ```
 
 Tugas:
@@ -148,10 +158,13 @@ Tugas:
 Contoh:
 
 ```text
-src/lib/services/booking-service.ts
-src/lib/services/checkin-service.ts
-src/lib/services/session-service.ts
+src/features/booking/server/booking-service.ts
+src/features/checkin/server/checkin-service.ts
+src/features/session/server/session-service.ts
 ```
+
+Zod schema, DTO, dan tipe yang dipakai bareng server + client ada di
+`src/features/*/shared/`.
 
 ### 4.5 Auth/data-access helper
 
@@ -186,6 +199,39 @@ Tugas:
 - grants/revokes.
 
 Aturan penting seperti kuota booking, double-scan QR, dan hak akses data **harus** ditegakkan di layer ini.
+
+### 4.7 Navigation layer
+
+Lokasi:
+
+```text
+src/lib/navigation/*
+src/components/ui/back-link.tsx
+src/components/ui/history-depth-tracker.tsx
+src/app/**/loading.tsx
+```
+
+Tugas:
+
+- memetakan route ke parent-nya (`parent-routes.ts`),
+- melacak apakah ada history in-app (`history-depth.ts`),
+- render tombol "Kembali" tanpa argumen per halaman (`back-link.tsx`),
+- menyediakan loading state instan per boundary layout.
+
+Aturan yang gampang salah:
+
+- **Tujuan back-link nggak boleh ditulis manual di page.** Semua ada di
+  `PARENT_ROUTES`. Menambah route baru tanpa mendaftarkannya bikin `BackLink`
+  nggak render dan nge-`console.warn` di dev.
+- **`loading.tsx` ditaruh mengikuti `layout.tsx`, bukan mengikuti page.** Pada
+  client navigation Next cuma me-render ulang di bawah layout yang di-share
+  source dan destination; boundary di atas layout itu nggak berefek. App ini
+  punya tiga layout (`app/`, `app/admin/`, `app/(member)/`), jadi tiga
+  `loading.tsx`. Menambah `loading.tsx` di folder tanpa `layout.tsx` menghasilkan
+  file mubazir.
+- **Setiap `router.replace()` wajib didahului `notifyRouteReplaced()`.** replace
+  menukar entri history, bukan menambah; tanpa penanda itu perubahan pathname-nya
+  terhitung sebagai navigasi maju dan penghitung kedalaman jadi kelebihan.
 
 ## 5. Keputusan arsitektur utama
 
@@ -399,6 +445,8 @@ Database tetap punya constraint/trigger tambahan.
 - Jangan mengandalkan UI untuk security.
 - Jangan mengedit `kuota_terisi` manual.
 - Jangan hard delete data penting tanpa keputusan domain.
+- Jangan menulis `<Link href="/...">← Kembali` manual di page — daftarkan di `PARENT_ROUTES`, pakai `<BackLink />`.
+- Jangan memanggil `router.replace()` tanpa `notifyRouteReplaced()` lebih dulu.
 - Jangan menjalankan migration baseline ke production yang sudah punya schema tanpa repair/history yang benar.
 
 ## 8. Cara menambah fitur baru
@@ -408,6 +456,7 @@ Sebelum coding, jawab dulu:
 ```text
 Fitur ini read atau write?
 Entry point-nya halaman/API mana?
+Kalau menambah halaman: parent-nya apa? (daftarkan di PARENT_ROUTES)
 Role siapa yang boleh?
 Data input-nya apa?
 Perlu Zod schema?
@@ -445,10 +494,16 @@ Jangan menambah audit columns besar-besaran menjelang launch tanpa kebutuhan jel
 
 - Login/register masih direct Supabase Auth dari Client Component. Ini disengaja.
 - Beberapa Server Components masih membaca Supabase langsung. Ini boleh untuk read path.
-- Styling masih banyak inline karena Fase 1 fokus fungsi.
+- Styling masih banyak inline karena Fase 1 fokus fungsi. Restyle menyeluruh
+  adalah fase kerja berikutnya — lihat `docs/ROADMAP.md`.
 - Auth pages belum punya styling matang.
-- Hero content CMS belum ada walaupun table/RLS sudah siap.
-- Forgot password belum ada.
+- Nol automated test di repo. Logic murni yang paling rawan (reducer, resolver
+  parent route, penghitung kedalaman history) sengaja ditulis tanpa import React
+  supaya gampang diuji begitu ada test runner. Lihat PR-08 di
+  `docs/REVIEW_ACTION_TRACKER.md`.
+- `loading.tsx` cuma menutupi latensi dengan skeleton, bukan menghilangkannya.
+  Menghilangkan roundtrip butuh `cacheComponents` + `use cache` + validasi
+  `unstable_instant` — perubahan arsitektur yang belum diambil.
 
 ## 11. Smoke test wajib sebelum deploy besar
 
@@ -467,5 +522,8 @@ Minimal:
 [ ] peserta tampil di /admin/peserta
 [ ] CSV export jalan
 [ ] user biasa tidak bisa akses admin
+[ ] tombol Kembali dari deep link tiket sampai ke / tanpa muter
 ```
+
+Checklist lengkap ada di `docs/SMOKE_TEST.md`.
 

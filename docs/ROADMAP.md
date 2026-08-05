@@ -1,7 +1,8 @@
 # Roadmap — TaburBarengUB
 
 > Dokumen keputusan & rencana kerja menuju rilis **pertengahan Agustus 2026**.
-> Ditulis: 2026-08-03 · HEAD: `8c74d8a` (PR-00..03 `DONE`, sudah di `origin/main`)
+> Ditulis: 2026-08-03 · Diperbarui: 2026-08-05 (Fase R + Fase R+ selesai)
+> HEAD saat ditulis: `8c74d8a` (PR-00..03 `DONE`, sudah di `origin/main`)
 >
 > Dokumen ini melengkapi:
 > - `docs/REVIEW_ACTION_TRACKER.md` — status action item PR-00..10 & backlog P3.x
@@ -90,6 +91,9 @@ src/
 | **Clean Architecture** (domain/application/infrastructure) | Overkill untuk skala ini; tiap fitur kecil jadi butuh 4 file boilerplate. |
 | **Atomic Design** (atoms/molecules/organisms) | `components/ui/` flat sudah cukup — design system sudah menentukan komponennya. |
 | **Server Actions untuk mutation utama** | Server Action Next.js-only, tidak bisa dipanggil native Android client. Semua mutation lintas-platform tetap lewat Route Handler + service. Lihat §2.3. |
+| **Back-link dihoist ke `layout.tsx`** | Terlihat rapi di atas kertas, tapi back-link ada **di dalam** `<div maxWidth>` tiap page, dan lebarnya beda-beda (680/760/820). Hoist berarti layout harus ikut mengambil alih `<main>` + container + menyeragamkan lebar = refactor page-shell + perubahan visual, yang itu kerjaan restyle. `<BackLink />` menyelesaikan duplikasinya tanpa menyentuh visual sama sekali. Lihat §7.6. |
+| **`router.back()` polos untuk semua back-link** | Banyak entry point app ini tanpa history in-app (link tiket di-share, QR discan, bookmark scanner). Di situ `back()` keluar dari app. Lihat §7.6. |
+| **Menyimpan "halaman sebelumnya" untuk back-link** | Versi satu-slot bikin bolak-balik antara dua halaman tanpa pernah naik. Versi stack = menulis ulang history browser yang sudah benar. Lihat §7.6. |
 
 ### 2.3 Kontrak lintas platform (untuk Android nanti)
 
@@ -246,17 +250,29 @@ Ditulis di file terpisah `src/styles/components-app.css` agar tidak tercampur de
 
 Alasan: restyle akan menulis ulang isi 24 file yang sama. Memindahkan file yang belum disentuh jauh lebih murah daripada memindahkan file yang baru selesai di-restyle. Kalau restyle duluan, tiap file disentuh 2x.
 
-### Fase R — Restrukturisasi (1-2 hari)
+### Fase R — Restrukturisasi — **SELESAI** (2026-08-05)
 
-1. Bikin struktur `features/*/{client,server,shared}/`
-2. Pindahkan service + schema + client component per fitur
-3. Tipiskan `app/api/*/route.ts` jadi shell (import dari `features/*/server/`)
-4. Ekstrak duplikasi: `formatDateTime`, `statusStyle` → `lib/format.ts`; `getUser`/`UserSummary` → `features/*/shared/`; `nullableTrimmedText` → shared Zod helper
-5. `export.csv/route.ts` pakai `requireAdmin()` (hapus cek inline)
-6. Konversi 4 file ber-state-banyak ke discriminated union + `useReducer`
-7. `npm run lint && npm run typecheck && npm run build` — typecheck akan menangkap semua import yang putus
+1. ✅ Bikin struktur `features/*/{client,server,shared}/`
+2. ✅ Pindahkan service + schema + client component per fitur
+3. ✅ Tipiskan `app/api/*/route.ts` jadi shell (import dari `features/*/server/`)
+4. ✅ Ekstrak duplikasi: `formatDateTime`, `statusStyle` → `lib/format.ts`; `getUser`/`UserSummary` → `features/*/shared/`; `nullableTrimmedText` → shared Zod helper
+5. ✅ `export.csv/route.ts` pakai `requireAdmin()` (hapus cek inline)
+6. ✅ Konversi ke discriminated union + `useReducer` — **2 file, bukan 4**. `scanner/page.tsx` (`scanner-reducer.ts`) dan `profile-completion-prompt.tsx` (`prompt-visibility-reducer.ts`). Dua kandidat sisanya diaudit dan ditolak: state-nya nggak punya kombinasi mustahil, konversi cuma nambah indirection.
+7. ✅ `npm run lint && npm run typecheck && npm run build` lulus di tiap langkah
 
 **Risiko:** sedang. Banyak import path berubah, tapi typecheck menangkap semuanya. Tidak ada perubahan behavior.
+
+### Fase R+ — Konsolidasi navigasi — **SELESAI** (2026-08-05)
+
+Tidak direncanakan di awal; muncul dari keluhan "tiap page ada link back yang diset manual, dan back-nya serasa reload".
+
+1. ✅ 14 back-link manual → `<BackLink />` tanpa argumen + `lib/navigation/parent-routes.ts`
+2. ✅ `loading.tsx` per `layout.tsx` (3 file) — bukan per page
+3. ✅ `router.push` → `router.replace` pasca-login/register (form yang sudah dilewati nggak boleh dicapai lewat back)
+4. ✅ `router.back()` kalau ada history in-app, `replace` ke parent kalau nggak (`lib/navigation/history-depth.ts`)
+
+Dikerjakan sekarang, bukan ditunda ke restyle, karena memangkas permukaan edit
+restyle dari 14 page jadi 1 komponen. Detail keputusan di §7.6.
 
 ### Fase 0–6 — Restyle (~10-13 hari)
 
@@ -352,6 +368,58 @@ graphify (AST-based) bagus untuk dependency & impact analysis (god node, communi
 
 Untuk memahami alur eksekusi nyata, baca `hasil-review-analisa/docs/EXECUTION_GRAPH.md` (dilacak manual per fitur), bukan dependency graph.
 
+### 7.6 Navigasi "Kembali": Up vs Back
+
+Ini bagian yang paling banyak salah belok, jadi ditulis lengkap supaya nggak diulang.
+
+**Masalah yang dilaporkan:** back-link "serasa load ulang dan nggak preserve route history, beda dengan gesture back di Android yang instan".
+
+Ternyata itu **dua masalah berbeda** yang kebetulan muncul sebagai satu gejala.
+
+**Masalah kecepatan.** `<Link>` itu soft navigation, bukan reload. Tapi semua
+tujuan back-link kecuali `/login` dirender dinamis (baca cookie Supabase), dan
+per dokumentasi Next: dynamic page **tidak di-prefetch dan tidak di-client-cache
+tanpa `loading.js`**, jadi tiap klik dijamin roundtrip server tanpa umpan balik
+visual apa pun. Diukur pada production build: 115–280ms waktu render server,
+spike sampai detik. `loading.tsx` menutupi itu dengan skeleton — tidak
+menghilangkannya. Perlu dicatat: **prefetch cuma jalan di production**, jadi
+efek `loading.tsx` tidak kelihatan sama sekali kalau ditest di `npm run dev`.
+
+**Masalah semantik.** Istilah Android-nya persis: **Up** (parent tetap sesuai
+hierarki, terlepas dari cara user sampai) vs **Back** (pop history stack apa
+adanya). Dipetakan ke alur nyata app ini, keduanya menghasilkan tujuan yang
+**sama** di hampir semua halaman. Bedanya cuma dua tempat, dan hasilnya split:
+di `/admin/sesi/[id]/edit` Back lebih benar (kembali ke detail, bukan dibuang ke
+daftar); di `/tiket-saya/[id]` sesudah booking Up lebih benar (ke daftar tiket,
+bukan balik ke sesi yang barusan dibooking).
+
+**Jadi kenapa tetap pakai `back()`?** Bukan demi ketepatan tujuan — Up sudah
+cukup benar. Demi kecepatan: Next secara khusus mengecualikan navigasi
+back/forward dari aturan cache ("pages are not cached by default but are reused
+during browser back/forward navigation"), justru supaya scroll position dan
+layout tidak lompat. Artinya `back()` = nol request, dan 115–280ms itu hilang,
+bukan disamarkan.
+
+**Yang perlu app ketahui cuma satu hal:** apakah history stack-nya punya isi
+in-app. Itu satu integer (`lib/navigation/history-depth.ts`), bukan daftar route
+— history browser sudah menyimpan route-nya dengan benar.
+
+**Jebakan yang sudah menggigit sekali.** Waktu tidak ada history in-app, fallback
+**harus** `replace`, tidak boleh `push`. Push menambah entri maju; entri itu lalu
+berada di belakang halaman parent, jadi klik berikutnya — yang sekarang melihat
+depth > 0 — malah `back()` ke anak yang barusan ditinggal, lalu push lagi.
+Infinite loop, dan cukup dua klik dari deep link QR untuk memicunya. Ini bukan
+edge case; ini alur utama tiket yang di-share.
+
+**Konsekuensi yang diterima sadar:** sesudah naik lewat `replace`, tombol back
+browser tidak kembali ke halaman asal. Untuk entry point dari luar app itu
+memang semantik Up yang benar — posisi ditukar, bukan ditumpuk.
+
+**Kalau nanti mau roundtrip-nya benar-benar hilang** (bukan cuma untuk back),
+jalurnya `cacheComponents: true` + `use cache` + `export const unstable_instant`
+untuk validasi struktur Suspense di build time. Itu perubahan arsitektur, belum
+diambil.
+
 ---
 
 ## 8. Log keputusan
@@ -365,3 +433,9 @@ Untuk memahami alur eksekusi nyata, baca `hasil-review-analisa/docs/EXECUTION_GR
 | 2026-08-03 | File design system disalin apa adanya ke `src/styles/` | Update dari desainer tinggal replace, tidak tercampur kode sendiri |
 | 2026-08-03 | PR-04..10 & P3.x ditunda sampai setelah deadline | Restyle prioritas; kecuali blocker kritis |
 | 2026-08-03 | 4 komponen ber-`useState`-banyak dikonversi ke discriminated union + `useReducer` | Menghilangkan impossible state; sesuai gaya UDF/Compose |
+| 2026-08-05 | Konversi `useReducer` cuma 2 file, bukan 4 | Dua kandidat sisanya nggak punya kombinasi state mustahil — konversi cuma nambah indirection |
+| 2026-08-05 | Back-link dikonsolidasi ke `<BackLink />` + `PARENT_ROUTES`, bukan dihoist ke `layout.tsx` | Hoist butuh layout mengambil alih container tiap page + menyeragamkan lebar = perubahan visual, itu kerjaan restyle. Lihat §7.6 |
+| 2026-08-05 | `loading.tsx` ditaruh per `layout.tsx` (3 file), bukan per page | Boundary di atas layout yang di-share nggak berefek pada client navigation |
+| 2026-08-05 | Back-link pakai `router.back()` kalau ada history in-app, `replace` ke parent kalau nggak | Diukur: tujuan back-link dinamis makan 115–280ms roundtrip yang `loading.tsx` cuma bisa tutupi. `back()` baca dari client cache = nol request. Lihat §7.6 |
+| 2026-08-05 | Fallback back-link wajib `replace`, dilarang `push` | Push bikin infinite loop lewat deep link QR dalam dua klik. Lihat §7.6 |
+| 2026-08-05 | Konsolidasi navigasi dikerjakan sekarang, bukan ditunda ke restyle | Memangkas permukaan edit restyle dari 14 page jadi 1 komponen |
