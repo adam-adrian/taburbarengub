@@ -127,7 +127,7 @@ Verification: `npm run lint`, `npm run typecheck`, `npm run build` re-run manual
 
 ## PR-01 — Profile refresh + payload minimization
 
-Status: `DONE`  
+Status: `DONE` (bagian refresh) · payload minimization **belum**  
 Target PR: `fix: refresh profile completion state and minimize client payload`  
 Priority: `P0`  
 Dependency: PR-00  
@@ -144,10 +144,10 @@ Source: Graphify H-01, Graphify M-06
 
 ### Scope
 
-- [ ] Setelah `submitProfile()` sukses dari modal, lakukan refresh state yang benar.
-- [ ] Pastikan modal ditutup tanpa auto-open ulang setelah refresh.
-- [ ] Pertimbangkan `router.refresh()` di `ProfileCompletionPrompt` atau callback `onCompleted()` dari caller.
-- [ ] Buat type sempit untuk data profile completion, misalnya:
+- [x] Setelah `submitProfile()` sukses dari modal, lakukan refresh state yang benar.
+- [x] Pastikan modal ditutup tanpa auto-open ulang setelah refresh.
+- [x] Pertimbangkan `router.refresh()` di `ProfileCompletionPrompt` atau callback `onCompleted()` dari caller.
+- [x] Buat type sempit untuk data profile completion, misalnya:
 
 ```ts
 type ProfileCompletionData = Pick<
@@ -161,6 +161,17 @@ type ProfileCompletionData = Pick<
   | 'profile_completed'
 >
 ```
+
+Diverifikasi ulang 2026-08-05: bagian refresh sudah jalan (`router.refresh()` di
+`handleProfileCompleted`, dan transisi reducer `completed` → `hidden` mencegah
+modal kebuka lagi). Tipe sempit `ProfileCompletionData` ada di
+`src/features/profile/shared/profile-form-shared.ts`.
+
+Yang **belum**: `getProfileGate()` di `src/features/profile/server/profile-service.ts`
+masih `.select('*')` pada tabel `users`, jadi baris utuh (`no_hp`, `role`,
+`email`, `created_at`) ikut dikirim ke `ProfileCompletionPrompt`. Ini baris milik
+user sendiri di bawah RLS — bukan kebocoran lintas-user, murni payload hygiene
+(temuan M-06 asli).
 
 - [ ] Select hanya field profile yang dibutuhkan prompt:
 
@@ -398,6 +409,8 @@ Source: Review P1.2, Graphify H-03
 - [ ] Do not rely on `sessionStorage` for verification onboarding because links may open in another tab/device.
 - [ ] Enable Turnstile/hCaptcha in Supabase/Auth if chosen.
 - [ ] Confirm Supabase redirect allowlist.
+- [ ] Jangan tampilkan `signUpError.message` mentah di UI register — bisa jadi alat enumerasi email (temuan S5, analisis 2026-08-03).
+- [ ] Samakan kebijakan panjang password antara client (minLength 8) dan Supabase server (default bisa lebih rendah) — temuan S6.
 - [ ] Confirm reset password still works.
 
 ### Acceptance criteria
@@ -626,6 +639,14 @@ Status: `TODO`
 
 - [ ] Mask or hide raw QR token after failed scan.
 
+Catatan 2026-08-05: `scanner/page.tsx` dikonversi ke `useReducer` dan perilaku ini
+**sengaja dipertahankan** — refactor-nya behavior-preserving, bukan tempatnya
+memperbaiki temuan. Sekarang perilakunya terpusat di satu tempat: varian
+`{ tag: 'error', qrToken: string | null }` di
+`src/features/checkin/client/scanner-reducer.ts`. Perbaikannya tinggal buang
+`qrToken` dari varian `error` — compiler akan menunjukkan setiap tempat yang
+merendernya.
+
 ---
 
 ## P3.5 — Audit trail
@@ -639,6 +660,27 @@ Potential columns:
 - [ ] `hero_content.updated_by`
 - [ ] `bookings.checked_in_by`
 - [ ] cancellation actor/timestamp if cancellation added
+
+---
+
+## P3.6 — Rate limiting untuk endpoint mutasi publik
+
+Status: `TODO`  \
+Sumber: Analisis mendalam 2026-08-03 (docs/ANALISIS_MENDALAM.md, temuan S4) — prioritas tinggi untuk produksi.
+
+- [ ] Rate limit `POST /api/bookings` & `POST /api/check-in` (per user + per IP).
+- [ ] Pertimbangkan limit per-sesi (mis. max N attempt booking per menit) untuk mencegah spam.
+- [ ] Pastikan error rate-limit dibedakan dari error bisnis (429 vs 409/400) dan tidak membocorkan detail.
+
+---
+
+## P3.7 — Konsistensi error mapping di hero-service
+
+Status: `TODO`  \
+Sumber: Analisis mendalam 2026-08-03 — 4/5 service memetakan error DB → HTTP; `updateHeroContent` selalu 500.
+
+- [ ] Tambah pemetaan error-code (mis. 23505 / constraint violation → 409/400) di `src/features/hero/server/hero-service.ts`.
+- [ ] Selaraskan pola dengan booking/check-in/profile/session (PETA_ERROR / mapError).
 
 ---
 
